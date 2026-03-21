@@ -3,7 +3,7 @@
 import { X, Heart, Send, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useApp } from '@/lib/AppContext';
-import { fetchComments, addComment, SupabaseComment } from '@/lib/supabase-posts';
+import { fetchComments, addComment, sendNotification, SupabaseComment } from '@/lib/supabase-posts';
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
@@ -58,6 +58,18 @@ export default function CommentsDrawer() {
       // Update comment count using the real count from Supabase
       const post = allPosts.find(p => p.id === currentVideoId);
       updatePostCounts(currentVideoId, post?.likes ?? 0, totalCount);
+
+      // Send notification to post owner
+      if (post && currentUser) {
+        sendNotification({
+          recipientUsername: post.username,
+          actorUsername: currentUser.username,
+          actorAvatar: currentUser.avatar || '',
+          type: 'comment',
+          postId: currentVideoId,
+          text: `commented: "${newComment.trim().slice(0, 50)}"`,
+        }).catch(() => {});
+      }
     } catch (e) {
       console.error('Failed to send comment:', e);
     } finally {

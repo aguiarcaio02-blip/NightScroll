@@ -222,6 +222,64 @@ export async function deleteComment(commentId: string, postId: string): Promise<
   await supabase.from('posts').update({ comments_count: count || 0 }).eq('id', postId);
 }
 
+// --- NOTIFICATIONS ---
+
+export interface SupabaseNotification {
+  id: string;
+  recipient_username: string;
+  actor_username: string;
+  actor_avatar: string;
+  type: string;
+  post_id: string | null;
+  text: string;
+  read: boolean;
+  created_at: string;
+}
+
+// Send a notification (skips if actor is the recipient)
+export async function sendNotification(params: {
+  recipientUsername: string;
+  actorUsername: string;
+  actorAvatar: string;
+  type: string;
+  postId: string;
+  text: string;
+}): Promise<void> {
+  // Don't notify yourself
+  if (params.recipientUsername === params.actorUsername) return;
+
+  await supabase.from('notifications').insert({
+    recipient_username: params.recipientUsername,
+    actor_username: params.actorUsername,
+    actor_avatar: params.actorAvatar,
+    type: params.type,
+    post_id: params.postId,
+    text: params.text,
+  });
+}
+
+// Fetch notifications for a user
+export async function fetchNotifications(username: string): Promise<SupabaseNotification[]> {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('recipient_username', username)
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  if (error) throw new Error(`Fetch notifications failed: ${error.message}`);
+  return data || [];
+}
+
+// Mark all notifications as read
+export async function markNotificationsRead(username: string): Promise<void> {
+  await supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('recipient_username', username)
+    .eq('read', false);
+}
+
 // Delete a post and its video/thumbnail from storage
 export async function deletePostById(postId: string): Promise<void> {
   // Delete from database
