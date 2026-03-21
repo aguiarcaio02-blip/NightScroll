@@ -123,67 +123,36 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
     const newFacing = facingMode === 'user' ? 'environment' : 'user';
     setFacingMode(newFacing);
 
-    if (recording && streamRef.current) {
-      // Mid-recording: swap the video track without stopping the recorder
+    if (recording) {
+      // Mid-recording: stop current recorder (keeps chunks), switch camera, start new recorder
+      // Timer keeps running so the experience feels seamless
       try {
-        // Probe new camera
-        const probeStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: newFacing },
-          audio: false,
-        });
-        const probeTrack = probeStream.getVideoTracks()[0];
-        const capabilities = probeTrack.getCapabilities?.() as Record<string, unknown> | undefined;
-        const settings = probeTrack.getSettings();
-        const nativeWidth = (capabilities?.width as { max?: number })?.max || settings.width || 640;
-        const nativeHeight = (capabilities?.height as { max?: number })?.max || settings.height || 480;
-        probeStream.getTracks().forEach(t => t.stop());
-
-        const maxDim = Math.max(nativeWidth, nativeHeight);
-        const minDim = Math.min(nativeWidth, nativeHeight);
-        let targetWidth = minDim;
-        let targetHeight = Math.round(minDim * 16 / 9);
-        if (targetHeight > maxDim) {
-          targetHeight = maxDim;
-          targetWidth = Math.round(maxDim * 9 / 16);
+        // Stop current recorder — this fires ondataavailable to save remaining chunks
+        // but we override onstop so it doesn't trigger onRecorded
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.onstop = null; // Don't fire onRecorded
+          mediaRecorderRef.current.stop();
         }
 
-        // Get new video-only stream
-        const newVideoStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: newFacing,
-            width: { ideal: targetWidth, max: targetWidth },
-            height: { ideal: targetHeight, max: targetHeight },
-            aspectRatio: { ideal: 9 / 16 },
-          },
-          audio: false,
-        });
+        // Switch to new camera
+        await startCamera(newFacing);
 
-        const newVideoTrack = newVideoStream.getVideoTracks()[0];
-
-        // Set zoom to min
-        const newCaps = newVideoTrack.getCapabilities?.() as Record<string, unknown> | undefined;
-        if (newCaps?.zoom) {
-          const zoomRange = newCaps.zoom as { min: number };
-          try {
-            await newVideoTrack.applyConstraints({ advanced: [{ zoom: zoomRange.min } as MediaTrackConstraintSet] });
-          } catch { /* */ }
-        }
-
-        // Swap video track on the active stream (keeps MediaRecorder running)
-        const oldVideoTrack = streamRef.current.getVideoTracks()[0];
-        streamRef.current.removeTrack(oldVideoTrack);
-        oldVideoTrack.stop();
-        streamRef.current.addTrack(newVideoTrack);
-
-        // Update video element
-        if (videoRef.current) {
-          videoRef.current.srcObject = streamRef.current;
+        // Start a new recorder on the new stream, continuing to append chunks
+        if (streamRef.current) {
+          const mr = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' });
+          mr.ondataavailable = (e) => {
+            if (e.data.size > 0) chunksRef.current.push(e.data);
+          };
+          mr.onstop = () => {
+            onRecorded();
+          };
+          mr.start();
+          mediaRecorderRef.current = mr;
         }
       } catch (err) {
         console.error('[NightScroll Camera] Flip during recording failed:', err);
       }
     } else {
-      // Not recording: full restart is fine
       await startCamera(newFacing);
     }
   };
