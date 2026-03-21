@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, ReactNode } from 'react';
 import { Video } from '@/lib/mock-data';
-import { saveVideoBlob, getVideoBlob, deleteVideoBlob } from '@/lib/storage';
+import { uploadVideo, uploadThumbnail, createPost, fetchPosts, fetchUserPosts, deletePostById, SupabasePost } from '@/lib/supabase-posts';
 
 export interface UserAccount {
   email: string;
@@ -10,24 +10,6 @@ export interface UserAccount {
   bio: string;
   avatar: string;
 }
-
-export interface UserPost {
-  id: string;
-  videoUrl: string;
-  thumbnailUrl: string;
-  caption: string;
-  tags: string[];
-  visibility: string;
-  premiumContent: boolean;
-  allowComments: boolean;
-  allowDownloads: boolean;
-  ageRestriction: boolean;
-  createdAt: number;
-  username: string;
-}
-
-// Metadata stored in localStorage (everything except blob URL)
-type PostMeta = Omit<UserPost, 'videoUrl'>;
 
 interface AppContextType {
   ageVerified: boolean;
@@ -50,15 +32,26 @@ interface AppContextType {
   openTip: (creatorId: string) => void;
   currentVideoId: string | null;
   setCurrentVideoId: (id: string | null) => void;
-  userPosts: UserPost[];
-  addPost: (post: Omit<UserPost, 'id' | 'createdAt'>, videoBlob: Blob | null) => void;
-  deletePost: (id: string) => void;
-  userVideos: Video[];
+  // Posts from Supabase
+  allPosts: SupabasePost[];
+  myPosts: SupabasePost[];
+  addPost: (params: {
+    caption: string;
+    tags: string[];
+    visibility: string;
+    premiumContent: boolean;
+    allowComments: boolean;
+    allowDownloads: boolean;
+    ageRestriction: boolean;
+  }, videoBlob: Blob | null, thumbnailDataUrl: string | null) => Promise<void>;
+  deletePost: (id: string) => Promise<void>;
+  refreshPosts: () => Promise<void>;
+  posting: boolean;
+  feedVideos: Video[];
+  myVideos: Video[];
 }
 
 const AppContext = createContext<AppContextType | null>(null);
-
-const POSTS_KEY = 'nightscroll_posts';
 
 function loadUser(): UserAccount | null {
   if (typeof window === 'undefined') return null;
@@ -70,21 +63,23 @@ function loadUser(): UserAccount | null {
   }
 }
 
-function loadPostMeta(): PostMeta[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const stored = localStorage.getItem(POSTS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
-
-function savePostMeta(posts: UserPost[]) {
-  if (typeof window === 'undefined') return;
-  // Strip videoUrl (blob URLs) before saving — they're not valid across sessions
-  const metas: PostMeta[] = posts.map(({ videoUrl, ...rest }) => rest);
-  localStorage.setItem(POSTS_KEY, JSON.stringify(metas));
+function postToVideo(post: SupabasePost): Video {
+  return {
+    id: post.id,
+    creatorId: post.username,
+    caption: post.caption + (post.tags.length > 0 ? ' ' + post.tags.join(' ') : ''),
+    hashtags: post.tags,
+    sound: 'Original audio',
+    likes: post.likes,
+    comments: post.comments_count,
+    shares: post.shares,
+    views: post.views,
+    isPremium: post.premium_content,
+    gradient: 'linear-gradient(135deg, #1a1a2e, #16213e)',
+    duration: 15,
+    videoUrl: post.video_url,
+    thumbnailUrl: post.thumbnail_url,
+  };
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -102,92 +97,97 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [tipOpen, setTipOpen] = useState(false);
   const [tipCreatorId, setTipCreatorId] = useState<string | null>(null);
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
-  const [userPosts, setUserPosts] = useState<UserPost[]>([]);
-  const [postsLoaded, setPostsLoaded] = useState(false);
+  const [allPosts, setAllPosts] = useState<SupabasePost[]>([]);
+  const [posting, setPosting] = useState(false);
 
-  // Restore posts from localStorage + IndexedDB on mount
+  // Fetch all posts on mount
   useEffect(() => {
-    async function restorePosts() {
-      const metas = loadPostMeta();
-      if (metas.length === 0) {
-        setPostsLoaded(true);
-        return;
-      }
-
-      const restored: UserPost[] = [];
-      for (const meta of metas) {
-        try {
-          const blob = await getVideoBlob(meta.id);
-          restored.push({
-            ...meta,
-            videoUrl: blob ? URL.createObjectURL(blob) : '',
-          });
-        } catch {
-          // If blob retrieval fails, still show post with thumbnail
-          restored.push({ ...meta, videoUrl: '' });
-        }
-      }
-      setUserPosts(restored);
-      setPostsLoaded(true);
-    }
-    restorePosts();
+    fetchPosts()
+      .then(setAllPosts)
+      .catch(e => console.error('Failed to fetch posts:', e));
   }, []);
 
-  // Persist post metadata whenever posts change (after initial load)
-  useEffect(() => {
-    if (postsLoaded) {
-      savePostMeta(userPosts);
+  const refreshPosts = useCallback(async () => {
+    try {
+      const posts = await fetchPosts();
+      setAllPosts(posts);
+    } catch (e) {
+      console.error('Failed to refresh posts:', e);
     }
-  }, [userPosts, postsLoaded]);
-
-  const addPost = useCallback(async (post: Omit<UserPost, 'id' | 'createdAt'>, videoBlob: Blob | null) => {
-    const newPost: UserPost = {
-      ...post,
-      id: `post_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      createdAt: Date.now(),
-    };
-
-    // Save video blob to IndexedDB
-    if (videoBlob) {
-      try {
-        await saveVideoBlob(newPost.id, videoBlob);
-      } catch (e) {
-        console.error('Failed to save video blob:', e);
-      }
-    }
-
-    setUserPosts(prev => [newPost, ...prev]);
   }, []);
+
+  // Filter posts by current user
+  const myPosts = useMemo(() => {
+    if (!currentUser) return [];
+    return allPosts.filter(p => p.username === currentUser.username);
+  }, [allPosts, currentUser]);
+
+  const addPost = useCallback(async (
+    params: {
+      caption: string;
+      tags: string[];
+      visibility: string;
+      premiumContent: boolean;
+      allowComments: boolean;
+      allowDownloads: boolean;
+      ageRestriction: boolean;
+    },
+    videoBlob: Blob | null,
+    thumbnailDataUrl: string | null,
+  ) => {
+    if (!currentUser || !videoBlob) return;
+    setPosting(true);
+
+    try {
+      // Generate a unique ID for file naming
+      const fileId = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+      // Upload video to Supabase Storage
+      const videoUrl = await uploadVideo(videoBlob, fileId);
+
+      // Upload thumbnail
+      let thumbnailUrl = '';
+      if (thumbnailDataUrl) {
+        thumbnailUrl = await uploadThumbnail(thumbnailDataUrl, fileId);
+      }
+
+      // Create post record in database
+      const newPost = await createPost({
+        username: currentUser.username,
+        avatar: currentUser.avatar || '',
+        video_url: videoUrl,
+        thumbnail_url: thumbnailUrl,
+        caption: params.caption,
+        tags: params.tags,
+        visibility: params.visibility,
+        premium_content: params.premiumContent,
+        allow_comments: params.allowComments,
+        allow_downloads: params.allowDownloads,
+        age_restriction: params.ageRestriction,
+      });
+
+      // Add to local state immediately
+      setAllPosts(prev => [newPost, ...prev]);
+    } catch (e) {
+      console.error('Failed to create post:', e);
+      throw e;
+    } finally {
+      setPosting(false);
+    }
+  }, [currentUser]);
 
   const deletePost = useCallback(async (id: string) => {
-    // Remove blob from IndexedDB
     try {
-      await deleteVideoBlob(id);
+      await deletePostById(id);
+      setAllPosts(prev => prev.filter(p => p.id !== id));
     } catch (e) {
-      console.error('Failed to delete video blob:', e);
+      console.error('Failed to delete post:', e);
     }
-    setUserPosts(prev => prev.filter(p => p.id !== id));
   }, []);
 
-  // Convert user posts to Video format for feed/profile display
-  const userVideos: Video[] = useMemo(() => {
-    return userPosts.map(post => ({
-      id: post.id,
-      creatorId: currentUser?.username || 'me',
-      caption: post.caption + (post.tags.length > 0 ? ' ' + post.tags.join(' ') : ''),
-      hashtags: post.tags,
-      sound: 'Original audio',
-      likes: 0,
-      comments: 0,
-      shares: 0,
-      views: 0,
-      isPremium: post.premiumContent,
-      gradient: 'linear-gradient(135deg, #1a1a2e, #16213e)',
-      duration: 15,
-      videoUrl: post.videoUrl,
-      thumbnailUrl: post.thumbnailUrl,
-    }));
-  }, [userPosts, currentUser]);
+  // Convert to Video format for components
+  const feedVideos: Video[] = useMemo(() => allPosts.map(postToVideo), [allPosts]);
+  const myVideos: Video[] = useMemo(() => myPosts.map(postToVideo), [myPosts]);
 
   const openTip = useCallback((creatorId: string) => {
     setTipCreatorId(creatorId);
@@ -230,7 +230,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       shareOpen, setShareOpen,
       tipOpen, setTipOpen, tipCreatorId, openTip,
       currentVideoId, setCurrentVideoId,
-      userPosts, addPost, deletePost, userVideos,
+      allPosts, myPosts, addPost, deletePost, refreshPosts, posting,
+      feedVideos, myVideos,
     }}>
       {children}
     </AppContext.Provider>

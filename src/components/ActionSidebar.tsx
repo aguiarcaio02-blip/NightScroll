@@ -12,8 +12,9 @@ interface Props {
 
 export default function ActionSidebar({ video, onProfileClick }: Props) {
   const creator = getCreator(video.creatorId);
-  const { setCommentsOpen, setShareOpen, openTip, currentUser, deletePost, userPosts } = useApp();
-  const avatarSrc = creator?.avatar || currentUser?.avatar || '';
+  const { setCommentsOpen, setShareOpen, openTip, currentUser, deletePost, myPosts, allPosts } = useApp();
+  const supabasePost = allPosts.find(p => p.id === video.id);
+  const avatarSrc = creator?.avatar || supabasePost?.avatar || currentUser?.avatar || '';
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [likeCount, setLikeCount] = useState(video.likes);
@@ -22,7 +23,7 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Check if this is the current user's video
-  const isOwnVideo = userPosts.some(p => p.id === video.id);
+  const isOwnVideo = myPosts.some(p => p.id === video.id);
 
   // Close menu on outside click
   useEffect(() => {

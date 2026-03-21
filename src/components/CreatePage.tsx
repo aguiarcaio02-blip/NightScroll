@@ -15,7 +15,7 @@ const settingsRows = [
 ];
 
 export default function CreatePage() {
-  const { setActiveTab, addPost, currentUser } = useApp();
+  const { setActiveTab, addPost, currentUser, posting } = useApp();
   const [step, setStep] = useState(1);
   const [showCamera, setShowCamera] = useState(false);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
@@ -207,33 +207,35 @@ export default function CreatePage() {
 
           {/* Post button */}
           <button
-            onClick={() => {
-              if (!videoUrl || !currentUser) return;
-              addPost({
-                videoUrl,
-                thumbnailUrl: thumbnailUrl || '',
-                caption,
-                tags: selectedTags,
-                visibility,
-                premiumContent: toggles['Premium Content'],
-                allowComments: toggles['Allow Comments'],
-                allowDownloads: toggles['Allow Downloads'],
-                ageRestriction: toggles['Age Restriction'],
-                username: currentUser.username,
-              }, videoBlob);
-              // Reset state and go to profile
-              setCaption('');
-              setSelectedTags([]);
-              setVideoBlob(null);
-              setVideoUrl(null);
-              setThumbnailUrl(null);
-              setStep(1);
-              setActiveTab('profile');
+            disabled={posting}
+            onClick={async () => {
+              if (!videoUrl || !currentUser || posting) return;
+              try {
+                await addPost({
+                  caption,
+                  tags: selectedTags,
+                  visibility,
+                  premiumContent: toggles['Premium Content'],
+                  allowComments: toggles['Allow Comments'],
+                  allowDownloads: toggles['Allow Downloads'],
+                  ageRestriction: toggles['Age Restriction'],
+                }, videoBlob, thumbnailUrl);
+                // Reset state and go to profile
+                setCaption('');
+                setSelectedTags([]);
+                setVideoBlob(null);
+                setVideoUrl(null);
+                setThumbnailUrl(null);
+                setStep(1);
+                setActiveTab('profile');
+              } catch (e) {
+                console.error('Post failed:', e);
+              }
             }}
-            className="w-full h-[48px] rounded-[8px] text-white font-bold text-[15px]"
+            className="w-full h-[48px] rounded-[8px] text-white font-bold text-[15px] disabled:opacity-50"
             style={{ background: 'linear-gradient(135deg, #D946EF, #A855F7)' }}
           >
-            Post
+            {posting ? 'Uploading...' : 'Post'}
           </button>
         </div>
       )}

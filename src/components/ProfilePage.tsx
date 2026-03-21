@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronLeft, BadgeCheck, Crown, Send, Grid3X3, Lock, Heart, Play, DollarSign, Share2, Settings, User } from 'lucide-react';
-import { Creator, videos, formatCount } from '@/lib/mock-data';
+import { Creator, formatCount } from '@/lib/mock-data';
 import { useApp } from '@/lib/AppContext';
 import EditProfileModal from './EditProfileModal';
 
@@ -23,16 +23,16 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const { openTip, setActiveTab: setAppTab, currentUser, userVideos } = useApp();
+  const { openTip, setActiveTab: setAppTab, currentUser, myVideos, feedVideos } = useApp();
 
   // Use current user data for own profile
   const displayAvatar = isOwn && currentUser?.avatar ? currentUser.avatar : creator.avatar;
   const displayBio = isOwn && currentUser ? (currentUser.bio || 'Welcome to my profile! Edit to add your bio.') : creator.bio;
 
-  // For own profile, include user-posted videos
+  // For own profile show user's posts, for others filter feed by username
   const creatorVideos = isOwn
-    ? [...userVideos, ...videos.filter(v => v.creatorId === creator.id)]
-    : videos.filter(v => v.creatorId === creator.id);
+    ? myVideos
+    : feedVideos.filter(v => v.creatorId === creator.username);
   const premiumVideos = creatorVideos.filter(v => v.isPremium);
   const displayVideos = activeTab === 'premium' ? premiumVideos : creatorVideos;
 

@@ -10,12 +10,13 @@ interface Props {
 }
 
 export default function VideoInfo({ video, onProfileClick }: Props) {
-  const { currentUser } = useApp();
+  const { currentUser, allPosts } = useApp();
   const creator = getCreator(video.creatorId);
 
-  // For user-posted videos, use current user info
-  const displayName = creator?.username || currentUser?.username || 'you';
-  const displayAvatar = creator?.avatar || currentUser?.avatar || '';
+  // For Supabase posts, look up poster info from the post data
+  const supabasePost = allPosts.find(p => p.id === video.id);
+  const displayName = creator?.username || supabasePost?.username || currentUser?.username || 'you';
+  const displayAvatar = creator?.avatar || supabasePost?.avatar || currentUser?.avatar || '';
   const isVerified = creator?.verified || false;
 
   const captionParts = video.caption.split(/(#\w+)/g);
