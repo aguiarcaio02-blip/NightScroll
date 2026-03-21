@@ -46,29 +46,38 @@ export default function CommentsDrawer() {
     if (!newComment.trim() || !currentVideoId || !currentUser || sending) return;
     setSending(true);
 
+    // Save values before any state changes
+    const commentText = newComment.trim();
+    const videoId = currentVideoId;
+    const username = currentUser.username;
+    const avatar = currentUser.avatar || '';
+    const post = allPosts.find(p => p.id === videoId);
+
     try {
       const { comment, totalCount } = await addComment(
-        currentVideoId,
-        currentUser.username,
-        currentUser.avatar || '',
-        newComment.trim()
+        videoId,
+        username,
+        avatar,
+        commentText
       );
       setComments(prev => [...prev, comment]);
       setNewComment('');
-      // Update comment count using the real count from Supabase
-      const post = allPosts.find(p => p.id === currentVideoId);
-      updatePostCounts(currentVideoId, post?.likes ?? 0, totalCount);
+      updatePostCounts(videoId, post?.likes ?? 0, totalCount);
 
       // Send notification to post owner
-      if (post && currentUser) {
-        sendNotification({
-          recipientUsername: post.username,
-          actorUsername: currentUser.username,
-          actorAvatar: currentUser.avatar || '',
-          type: 'comment',
-          postId: currentVideoId,
-          text: `commented: "${newComment.trim().slice(0, 50)}"`,
-        }).catch(() => {});
+      if (post && post.username !== username) {
+        try {
+          await sendNotification({
+            recipientUsername: post.username,
+            actorUsername: username,
+            actorAvatar: avatar,
+            type: 'comment',
+            postId: videoId,
+            text: `commented: "${commentText.slice(0, 50)}"`,
+          });
+        } catch (notifErr) {
+          console.error('Notification failed:', notifErr);
+        }
       }
     } catch (e) {
       console.error('Failed to send comment:', e);

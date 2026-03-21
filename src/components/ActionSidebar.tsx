@@ -61,15 +61,19 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
       updatePostCounts(video.id, result.count, commentCount);
 
       // Send notification to post owner on like (not unlike)
-      if (result.liked && supabasePost) {
-        sendNotification({
-          recipientUsername: supabasePost.username,
-          actorUsername: currentUser.username,
-          actorAvatar: currentUser.avatar || '',
-          type: 'like',
-          postId: video.id,
-          text: 'liked your video',
-        }).catch(() => {});
+      if (result.liked && supabasePost && supabasePost.username !== currentUser.username) {
+        try {
+          await sendNotification({
+            recipientUsername: supabasePost.username,
+            actorUsername: currentUser.username,
+            actorAvatar: currentUser.avatar || '',
+            type: 'like',
+            postId: video.id,
+            text: 'liked your video',
+          });
+        } catch (notifErr) {
+          console.error('Like notification failed:', notifErr);
+        }
       }
     } catch {
       setLiked(wasLiked);
