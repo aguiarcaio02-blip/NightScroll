@@ -47,6 +47,7 @@ interface AppContextType {
   }, videoBlob: Blob | null, thumbnailDataUrl: string | null) => Promise<void>;
   deletePost: (id: string) => Promise<void>;
   refreshPosts: () => Promise<void>;
+  updatePostCounts: (postId: string, likes: number, commentsCount: number) => void;
   posting: boolean;
   feedVideos: Video[];
   myVideos: Video[];
@@ -146,6 +147,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.error('Failed to refresh posts:', e);
     }
+  }, []);
+
+  // Directly update like/comment counts in local state (no refetch needed)
+  const updatePostCounts = useCallback((postId: string, likes: number, commentsCount: number) => {
+    setAllPosts(prev =>
+      prev.map(p => p.id === postId ? { ...p, likes, comments_count: commentsCount } : p)
+    );
   }, []);
 
   // Filter posts by current user
@@ -262,7 +270,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       shareOpen, setShareOpen,
       tipOpen, setTipOpen, tipCreatorId, openTip,
       currentVideoId, setCurrentVideoId,
-      allPosts, myPosts, addPost, deletePost, refreshPosts, posting,
+      allPosts, myPosts, addPost, deletePost, refreshPosts, updatePostCounts, posting,
       feedVideos, myVideos,
     }}>
       {children}

@@ -16,7 +16,7 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function CommentsDrawer() {
-  const { commentsOpen, setCommentsOpen, currentVideoId, currentUser, refreshPosts } = useApp();
+  const { commentsOpen, setCommentsOpen, currentVideoId, currentUser, updatePostCounts, allPosts } = useApp();
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<SupabaseComment[]>([]);
   const [loading, setLoading] = useState(false);
@@ -53,10 +53,14 @@ export default function CommentsDrawer() {
         currentUser.avatar || '',
         newComment.trim()
       );
-      setComments(prev => [...prev, comment]);
+      const updatedComments = [...comments, comment];
+      setComments(updatedComments);
       setNewComment('');
-      // Refresh posts to update comment count in feed
-      refreshPosts();
+      // Directly update comment count in local state
+      const post = allPosts.find(p => p.id === currentVideoId);
+      if (post) {
+        updatePostCounts(currentVideoId, post.likes, updatedComments.length);
+      }
     } catch (e) {
       console.error('Failed to send comment:', e);
     } finally {

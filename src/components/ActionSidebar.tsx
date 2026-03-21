@@ -13,7 +13,7 @@ interface Props {
 
 export default function ActionSidebar({ video, onProfileClick }: Props) {
   const creator = getCreator(video.creatorId);
-  const { setCommentsOpen, setShareOpen, openTip, currentUser, deletePost, myPosts, allPosts, setCurrentVideoId, refreshPosts } = useApp();
+  const { setCommentsOpen, setShareOpen, openTip, currentUser, deletePost, myPosts, allPosts, setCurrentVideoId, updatePostCounts } = useApp();
   const supabasePost = allPosts.find(p => p.id === video.id);
   const avatarSrc = creator?.avatar || supabasePost?.avatar || currentUser?.avatar || '';
   const [liked, setLiked] = useState(false);
@@ -58,8 +58,8 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
     try {
       const result = await toggleLike(video.id, currentUser.username);
       setLiked(result.liked);
-      // Refresh as fallback in case Realtime is slow
-      refreshPosts();
+      // Directly update local state so count shows immediately
+      updatePostCounts(video.id, result.count, commentCount);
     } catch {
       setLiked(wasLiked);
     } finally {
