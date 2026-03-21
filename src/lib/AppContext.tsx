@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, ReactNode } from 'react';
 import { Video } from '@/lib/mock-data';
 import { uploadVideo, uploadThumbnail, createPost, fetchPosts, fetchUserPosts, deletePostById, SupabasePost } from '@/lib/supabase-posts';
+import { supabase } from '@/lib/supabase';
 
 export interface UserAccount {
   email: string;
@@ -100,11 +101,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [allPosts, setAllPosts] = useState<SupabasePost[]>([]);
   const [posting, setPosting] = useState(false);
 
-  // Fetch all posts on mount
+  // Fetch all posts on mount + subscribe to real-time updates
   useEffect(() => {
     fetchPosts()
       .then(setAllPosts)
       .catch(e => console.error('Failed to fetch posts:', e));
+
+    // Subscribe to real-time changes on the posts table
+    const channel = supabase
+      .channel('posts-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'posts' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newPost = payload.new as SupabasePost;
+            setAllPosts(prev => {
+              // Avoid duplicates
+              if (prev.some(p => p.id === newPost.id)) return prev;
+              return [newPost, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updated = payload.new as SupabasePost;
+            setAllPosts(prev =>
+              prev.map(p => p.id === updated.id ? updated : p)
+            );
+          } else if (payload.eventType === 'DELETE') {
+            const deleted = payload.old as { id: string };
+            setAllPosts(prev => prev.filter(p => p.id !== deleted.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const refreshPosts = useCallback(async () => {
