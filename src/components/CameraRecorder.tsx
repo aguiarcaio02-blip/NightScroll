@@ -28,9 +28,24 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facing, width: { ideal: 1080 }, height: { ideal: 1920 } },
+        video: {
+          facingMode: facing,
+          width: { ideal: 720 },
+          height: { ideal: 1280 },
+          zoom: { ideal: 1 },
+        } as MediaTrackConstraints,
         audio: true,
       });
+
+      // Try to set zoom to minimum if supported
+      const videoTrack = stream.getVideoTracks()[0];
+      const capabilities = videoTrack.getCapabilities?.() as Record<string, unknown> | undefined;
+      if (capabilities?.zoom) {
+        const zoomRange = capabilities.zoom as { min: number };
+        try {
+          await videoTrack.applyConstraints({ advanced: [{ zoom: zoomRange.min } as MediaTrackConstraintSet] });
+        } catch { /* zoom not adjustable */ }
+      }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -131,7 +146,7 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
             autoPlay
             playsInline
             muted
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-contain"
             style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
           />
         )}
