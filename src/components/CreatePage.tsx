@@ -11,7 +11,6 @@ const settingsRows = [
   { icon: Crown, iconColor: '#F59E0B', label: 'Premium Content', desc: 'Subscribers only', defaultOn: false, locked: false },
   { icon: MessageCircle, iconColor: '#CCCCCC', label: 'Allow Comments', desc: 'Everyone', defaultOn: true, locked: false },
   { icon: Share2, iconColor: '#CCCCCC', label: 'Allow Downloads', desc: 'Off by default', defaultOn: false, locked: false },
-  { icon: Shield, iconColor: '#D946EF', label: 'Age Restriction', desc: '18+ only', defaultOn: true, locked: true },
 ];
 
 export default function CreatePage() {
