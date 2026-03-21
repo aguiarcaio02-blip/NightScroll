@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Lock, Crown, Volume2, VolumeX, Heart } from 'lucide-react';
 import { Video, getCreator } from '@/lib/mock-data';
 import ActionSidebar from './ActionSidebar';
@@ -16,7 +16,26 @@ export default function VideoCard({ video, onProfileClick }: Props) {
   const [paused, setPaused] = useState(false);
   const [showHeart, setShowHeart] = useState(false);
   const [lastTap, setLastTap] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const creator = getCreator(video.creatorId);
+
+  // Sync muted state to video element
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = muted;
+    }
+  }, [muted]);
+
+  // Sync paused state to video element
+  useEffect(() => {
+    if (videoRef.current) {
+      if (paused) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  }, [paused]);
 
   const handleTap = useCallback(() => {
     const now = Date.now();
@@ -40,11 +59,12 @@ export default function VideoCard({ video, onProfileClick }: Props) {
       {/* Actual video element */}
       {video.videoUrl && (
         <video
+          ref={videoRef}
           src={video.videoUrl}
           className="absolute inset-0 w-full h-full object-cover z-[1]"
           loop
           muted={muted}
-          autoPlay={!paused}
+          autoPlay
           playsInline
           poster={video.thumbnailUrl}
         />

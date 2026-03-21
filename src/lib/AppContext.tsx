@@ -48,6 +48,7 @@ interface AppContextType {
   setCurrentVideoId: (id: string | null) => void;
   userPosts: UserPost[];
   addPost: (post: Omit<UserPost, 'id' | 'createdAt'>) => void;
+  deletePost: (id: string) => void;
   userVideos: Video[];
 }
 
@@ -87,6 +88,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       createdAt: Date.now(),
     };
     setUserPosts(prev => [newPost, ...prev]);
+  }, []);
+
+  const deletePost = useCallback((id: string) => {
+    setUserPosts(prev => prev.filter(p => p.id !== id));
   }, []);
 
   // Convert user posts to Video format for feed/profile display
@@ -150,7 +155,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       shareOpen, setShareOpen,
       tipOpen, setTipOpen, tipCreatorId, openTip,
       currentVideoId, setCurrentVideoId,
-      userPosts, addPost, userVideos,
+      userPosts, addPost, deletePost, userVideos,
     }}>
       {children}
     </AppContext.Provider>

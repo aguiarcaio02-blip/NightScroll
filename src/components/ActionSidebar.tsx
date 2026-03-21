@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Heart, MessageCircle, Bookmark, Share2, DollarSign, MoreHorizontal, Plus, User } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Heart, MessageCircle, Bookmark, Share2, DollarSign, MoreHorizontal, Plus, User, Trash2, Flag, EyeOff, X } from 'lucide-react';
 import { Video, getCreator, formatCount } from '@/lib/mock-data';
 import { useApp } from '@/lib/AppContext';
 
@@ -12,15 +12,40 @@ interface Props {
 
 export default function ActionSidebar({ video, onProfileClick }: Props) {
   const creator = getCreator(video.creatorId);
-  const { setCommentsOpen, setShareOpen, openTip, currentUser } = useApp();
+  const { setCommentsOpen, setShareOpen, openTip, currentUser, deletePost, userPosts } = useApp();
   const avatarSrc = creator?.avatar || currentUser?.avatar || '';
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [likeCount, setLikeCount] = useState(video.likes);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Check if this is the current user's video
+  const isOwnVideo = userPosts.some(p => p.id === video.id);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+        setConfirmDelete(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
 
   const handleLike = () => {
     setLiked(!liked);
     setLikeCount(prev => liked ? prev - 1 : prev + 1);
+  };
+
+  const handleDelete = () => {
+    deletePost(video.id);
+    setMenuOpen(false);
+    setConfirmDelete(false);
   };
 
   const actions = [
@@ -53,12 +78,6 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
       label: 'Tip',
       onClick: () => openTip(video.creatorId),
       ariaLabel: 'Send tip',
-    },
-    {
-      icon: <MoreHorizontal size={20} color="white" strokeWidth={2} />,
-      label: '',
-      onClick: () => {},
-      ariaLabel: 'More options',
     },
   ];
 
@@ -101,6 +120,73 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
           )}
         </button>
       ))}
+
+      {/* More options button */}
+      <div className="relative" ref={menuRef}>
+        <button
+          onClick={() => { setMenuOpen(!menuOpen); setConfirmDelete(false); }}
+          className="flex flex-col items-center gap-[2px] min-w-[44px] min-h-[44px] justify-center"
+          aria-label="More options"
+        >
+          <MoreHorizontal size={20} color="white" strokeWidth={2} />
+        </button>
+
+        {/* Dropdown menu */}
+        {menuOpen && (
+          <div
+            className="absolute bottom-[48px] right-0 w-[180px] rounded-[12px] overflow-hidden shadow-lg z-50"
+            style={{ background: '#1A1A1A', border: '1px solid #333' }}
+          >
+            {confirmDelete ? (
+              <div className="p-md">
+                <p className="text-[13px] text-white mb-md text-center">Delete this video?</p>
+                <div className="flex gap-sm">
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="flex-1 py-sm rounded-[8px] text-[13px] font-semibold text-white bg-bg-tertiary border border-border-default"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="flex-1 py-sm rounded-[8px] text-[13px] font-semibold text-white bg-red-600"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {isOwnVideo && (
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    className="w-full flex items-center gap-md px-lg py-md hover:bg-white/5 transition-colors"
+                  >
+                    <Trash2 size={16} color="#EF4444" />
+                    <span className="text-[14px] text-red-400">Delete video</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setMenuOpen(false)}
+                  className="w-full flex items-center gap-md px-lg py-md hover:bg-white/5 transition-colors"
+                >
+                  <EyeOff size={16} color="white" />
+                  <span className="text-[14px] text-white">Not interested</span>
+                </button>
+                {!isOwnVideo && (
+                  <button
+                    onClick={() => setMenuOpen(false)}
+                    className="w-full flex items-center gap-md px-lg py-md hover:bg-white/5 transition-colors"
+                  >
+                    <Flag size={16} color="white" />
+                    <span className="text-[14px] text-white">Report</span>
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
