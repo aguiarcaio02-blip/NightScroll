@@ -9,6 +9,21 @@ export interface UserAccount {
   avatar: string;
 }
 
+export interface UserPost {
+  id: string;
+  videoUrl: string;
+  thumbnailUrl: string;
+  caption: string;
+  tags: string[];
+  visibility: string;
+  premiumContent: boolean;
+  allowComments: boolean;
+  allowDownloads: boolean;
+  ageRestriction: boolean;
+  createdAt: number;
+  username: string;
+}
+
 interface AppContextType {
   ageVerified: boolean;
   setAgeVerified: (v: boolean) => void;
@@ -30,6 +45,8 @@ interface AppContextType {
   openTip: (creatorId: string) => void;
   currentVideoId: string | null;
   setCurrentVideoId: (id: string | null) => void;
+  userPosts: UserPost[];
+  addPost: (post: Omit<UserPost, 'id' | 'createdAt'>) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -59,6 +76,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [tipOpen, setTipOpen] = useState(false);
   const [tipCreatorId, setTipCreatorId] = useState<string | null>(null);
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
+  const [userPosts, setUserPosts] = useState<UserPost[]>([]);
+
+  const addPost = useCallback((post: Omit<UserPost, 'id' | 'createdAt'>) => {
+    const newPost: UserPost = {
+      ...post,
+      id: `post_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      createdAt: Date.now(),
+    };
+    setUserPosts(prev => [newPost, ...prev]);
+  }, []);
 
   const openTip = useCallback((creatorId: string) => {
     setTipCreatorId(creatorId);
@@ -101,6 +128,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       shareOpen, setShareOpen,
       tipOpen, setTipOpen, tipCreatorId, openTip,
       currentVideoId, setCurrentVideoId,
+      userPosts, addPost,
     }}>
       {children}
     </AppContext.Provider>

@@ -15,13 +15,14 @@ const settingsRows = [
 ];
 
 export default function CreatePage() {
-  const { setActiveTab } = useApp();
+  const { setActiveTab, addPost, currentUser } = useApp();
   const [step, setStep] = useState(1);
   const [showCamera, setShowCamera] = useState(false);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
+  const [visibility, setVisibility] = useState('Public');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [toggles, setToggles] = useState<Record<string, boolean>>({
     'Premium Content': false,
@@ -193,7 +194,11 @@ export default function CreatePage() {
             <div className="flex-1">
               <p className="text-[14px] text-white">Visibility</p>
             </div>
-            <select className="bg-bg-hover text-white text-[13px] rounded-[8px] px-md py-sm border border-border-default outline-none">
+            <select
+              value={visibility}
+              onChange={(e) => setVisibility(e.target.value)}
+              className="bg-bg-hover text-white text-[13px] rounded-[8px] px-md py-sm border border-border-default outline-none"
+            >
               <option>Public</option>
               <option>Followers</option>
               <option>Private</option>
@@ -202,6 +207,29 @@ export default function CreatePage() {
 
           {/* Post button */}
           <button
+            onClick={() => {
+              if (!videoUrl || !currentUser) return;
+              addPost({
+                videoUrl,
+                thumbnailUrl: thumbnailUrl || '',
+                caption,
+                tags: selectedTags,
+                visibility,
+                premiumContent: toggles['Premium Content'],
+                allowComments: toggles['Allow Comments'],
+                allowDownloads: toggles['Allow Downloads'],
+                ageRestriction: toggles['Age Restriction'],
+                username: currentUser.username,
+              });
+              // Reset state and go to profile
+              setCaption('');
+              setSelectedTags([]);
+              setVideoBlob(null);
+              setVideoUrl(null);
+              setThumbnailUrl(null);
+              setStep(1);
+              setActiveTab('profile');
+            }}
             className="w-full h-[48px] rounded-[8px] text-white font-bold text-[15px]"
             style={{ background: 'linear-gradient(135deg, #D946EF, #A855F7)' }}
           >
