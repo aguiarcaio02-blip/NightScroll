@@ -13,17 +13,19 @@ interface Props {
 
 export default function ActionSidebar({ video, onProfileClick }: Props) {
   const creator = getCreator(video.creatorId);
-  const { setCommentsOpen, setShareOpen, openTip, currentUser, deletePost, myPosts, allPosts, setCurrentVideoId } = useApp();
+  const { setCommentsOpen, setShareOpen, openTip, currentUser, deletePost, myPosts, allPosts, setCurrentVideoId, refreshPosts } = useApp();
   const supabasePost = allPosts.find(p => p.id === video.id);
   const avatarSrc = creator?.avatar || supabasePost?.avatar || currentUser?.avatar || '';
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [likeCount, setLikeCount] = useState(video.likes);
-  const [commentCount, setCommentCount] = useState(video.comments);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [liking, setLiking] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Read counts directly from Supabase post (updated via Realtime)
+  const likeCount = supabasePost?.likes ?? video.likes;
+  const commentCount = supabasePost?.comments_count ?? video.comments;
 
   const isOwnVideo = myPosts.some(p => p.id === video.id);
 
@@ -32,12 +34,6 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
     if (!currentUser || !supabasePost) return;
     hasUserLiked(video.id, currentUser.username).then(setLiked).catch(() => {});
   }, [video.id, currentUser, supabasePost]);
-
-  // Sync counts when video data changes
-  useEffect(() => {
-    setLikeCount(video.likes);
-    setCommentCount(video.comments);
-  }, [video.likes, video.comments]);
 
   // Close menu on outside click
   useEffect(() => {
@@ -56,19 +52,16 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
     if (!currentUser || !supabasePost || liking) return;
     setLiking(true);
 
-    // Optimistic update
     const wasLiked = liked;
     setLiked(!wasLiked);
-    setLikeCount(prev => wasLiked ? prev - 1 : prev + 1);
 
     try {
       const result = await toggleLike(video.id, currentUser.username);
       setLiked(result.liked);
-      setLikeCount(result.count);
+      // Refresh as fallback in case Realtime is slow
+      refreshPosts();
     } catch {
-      // Revert on error
       setLiked(wasLiked);
-      setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
     } finally {
       setLiking(false);
     }
