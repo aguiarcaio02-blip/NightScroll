@@ -18,6 +18,7 @@ export default function VideoCard({ video, onProfileClick }: Props) {
   const [lastTap, setLastTap] = useState(0);
   const [progress, setProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const tappedControlRef = useRef(false);
   const creator = getCreator(video.creatorId);
 
   // Track video progress
@@ -33,7 +34,7 @@ export default function VideoCard({ video, onProfileClick }: Props) {
     return () => el.removeEventListener('timeupdate', handleTimeUpdate);
   }, [video.videoUrl]);
 
-  // Sync muted state to video element imperatively
+  // Sync muted state to video element
   useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
@@ -51,12 +52,14 @@ export default function VideoCard({ video, onProfileClick }: Props) {
     }
   }, [paused]);
 
-  const handleTap = useCallback(() => {
-    // Skip if mute button was just tapped
-    if (muteRef.current) {
-      muteRef.current = false;
+  // Main card tap — handles pause/play and double-tap like
+  const handleCardTap = useCallback(() => {
+    // If a control button (mute, etc.) was tapped, skip
+    if (tappedControlRef.current) {
+      tappedControlRef.current = false;
       return;
     }
+
     const now = Date.now();
     if (now - lastTap < 300) {
       setShowHeart(true);
@@ -71,15 +74,12 @@ export default function VideoCard({ video, onProfileClick }: Props) {
     setLastTap(now);
   }, [lastTap]);
 
-  const muteRef = useRef(false);
-
-  const handleMuteToggle = useCallback(() => {
-    muteRef.current = true;
-    setMuted(prev => !prev);
-  }, []);
-
   return (
-    <div className="video-card overflow-hidden" style={{ background: video.gradient }}>
+    <div
+      className="video-card overflow-hidden"
+      style={{ background: video.gradient }}
+      onClick={handleCardTap}
+    >
       {/* Actual video element */}
       {video.videoUrl && (
         <video
@@ -93,21 +93,6 @@ export default function VideoCard({ video, onProfileClick }: Props) {
           poster={video.thumbnailUrl}
         />
       )}
-
-      {/* Tap area */}
-      <div
-        className="absolute inset-0 z-[5]"
-        onClick={handleTap}
-        role="button"
-        tabIndex={0}
-        aria-label={paused ? 'Resume video' : 'Pause video'}
-        onKeyDown={(e) => {
-          if (e.key === ' ' || e.key === 'Enter') {
-            e.preventDefault();
-            setPaused(p => !p);
-          }
-        }}
-      />
 
       {/* Paused indicator */}
       {paused && (
@@ -128,7 +113,7 @@ export default function VideoCard({ video, onProfileClick }: Props) {
       {/* Premium badge */}
       {video.isPremium && (
         <div
-          className="absolute top-[60px] left-md z-[20] flex items-center gap-[4px] px-sm py-[3px] rounded-full"
+          className="absolute top-[60px] left-md z-[20] flex items-center gap-[4px] px-sm py-[3px] rounded-full pointer-events-none"
           style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)' }}
         >
           <Crown size={11} color="black" strokeWidth={2.5} />
@@ -136,9 +121,12 @@ export default function VideoCard({ video, onProfileClick }: Props) {
         </div>
       )}
 
-      {/* Mute toggle — z-[30] to ensure it's above the tap area */}
+      {/* Mute toggle */}
       <button
-        onClick={handleMuteToggle}
+        onClick={(e) => {
+          e.stopPropagation();
+          setMuted(prev => !prev);
+        }}
         className="absolute top-[60px] right-md z-[30] w-[44px] h-[44px] rounded-full flex items-center justify-center"
         style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
         aria-label={muted ? 'Unmute' : 'Mute'}
@@ -148,7 +136,11 @@ export default function VideoCard({ video, onProfileClick }: Props) {
 
       {/* Premium paywall overlay */}
       {video.isPremium && (
-        <div className="absolute inset-0 z-[4] flex flex-col items-center justify-center" style={{ backdropFilter: 'blur(20px)', background: 'rgba(0,0,0,0.5)' }}>
+        <div
+          className="absolute inset-0 z-[4] flex flex-col items-center justify-center"
+          style={{ backdropFilter: 'blur(20px)', background: 'rgba(0,0,0,0.5)' }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <Lock size={48} color="white" className="mb-lg" />
           <p className="text-white text-[16px] font-semibold mb-md">Subscribe to unlock</p>
           <button
