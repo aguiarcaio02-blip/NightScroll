@@ -1,7 +1,8 @@
 'use client';
 
-import { Music, BadgeCheck } from 'lucide-react';
+import { Music, BadgeCheck, User } from 'lucide-react';
 import { Video, getCreator } from '@/lib/mock-data';
+import { useApp } from '@/lib/AppContext';
 
 interface Props {
   video: Video;
@@ -9,8 +10,13 @@ interface Props {
 }
 
 export default function VideoInfo({ video, onProfileClick }: Props) {
+  const { currentUser } = useApp();
   const creator = getCreator(video.creatorId);
-  if (!creator) return null;
+
+  // For user-posted videos, use current user info
+  const displayName = creator?.username || currentUser?.username || 'you';
+  const displayAvatar = creator?.avatar || currentUser?.avatar || '';
+  const isVerified = creator?.verified || false;
 
   const captionParts = video.caption.split(/(#\w+)/g);
 
@@ -22,24 +28,32 @@ export default function VideoInfo({ video, onProfileClick }: Props) {
       {/* Creator info row */}
       <div className="flex items-center gap-sm mb-sm">
         <button
-          onClick={() => onProfileClick(creator.id)}
+          onClick={() => creator ? onProfileClick(creator.id) : undefined}
           className="flex items-center gap-sm min-h-[44px]"
-          aria-label={`View ${creator.username}'s profile`}
+          aria-label={`View ${displayName}'s profile`}
         >
-          <div className="w-[32px] h-[32px] rounded-full bg-bg-tertiary flex items-center justify-center text-[14px] shrink-0">
-            {creator.avatar}
+          <div className="w-[32px] h-[32px] rounded-full bg-bg-tertiary flex items-center justify-center text-[14px] shrink-0 overflow-hidden">
+            {displayAvatar && displayAvatar.startsWith('data:') ? (
+              <img src={displayAvatar} alt="" className="w-full h-full object-cover" />
+            ) : displayAvatar ? (
+              displayAvatar
+            ) : (
+              <User size={16} className="text-text-muted" />
+            )}
           </div>
-          <span className="text-[15px] font-bold text-white">@{creator.username}</span>
-          {creator.verified && (
+          <span className="text-[15px] font-bold text-white">@{displayName}</span>
+          {isVerified && (
             <BadgeCheck size={14} className="text-accent-primary shrink-0" fill="#D946EF" color="#0A0A0A" />
           )}
         </button>
-        <button
-          className="ml-sm px-md py-[4px] rounded-full text-[12px] font-semibold border border-accent-primary text-accent-primary hover:bg-accent-primary hover:text-white transition-colors min-h-[28px]"
-          aria-label={`Follow ${creator.username}`}
-        >
-          Follow
-        </button>
+        {creator && (
+          <button
+            className="ml-sm px-md py-[4px] rounded-full text-[12px] font-semibold border border-accent-primary text-accent-primary hover:bg-accent-primary hover:text-white transition-colors min-h-[28px]"
+            aria-label={`Follow ${displayName}`}
+          >
+            Follow
+          </button>
+        )}
       </div>
 
       {/* Caption */}

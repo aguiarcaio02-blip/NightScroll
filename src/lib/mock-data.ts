@@ -34,6 +34,8 @@ export interface Video {
   isPremium: boolean;
   gradient: string;
   duration: number;
+  videoUrl?: string;
+  thumbnailUrl?: string;
 }
 
 export interface Comment {

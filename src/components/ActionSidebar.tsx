@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Heart, MessageCircle, Bookmark, Share2, DollarSign, MoreHorizontal, Plus } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, Share2, DollarSign, MoreHorizontal, Plus, User } from 'lucide-react';
 import { Video, getCreator, formatCount } from '@/lib/mock-data';
 import { useApp } from '@/lib/AppContext';
 
@@ -12,7 +12,8 @@ interface Props {
 
 export default function ActionSidebar({ video, onProfileClick }: Props) {
   const creator = getCreator(video.creatorId);
-  const { setCommentsOpen, setShareOpen, openTip } = useApp();
+  const { setCommentsOpen, setShareOpen, openTip, currentUser } = useApp();
+  const avatarSrc = creator?.avatar || currentUser?.avatar || '';
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [likeCount, setLikeCount] = useState(video.likes);
@@ -69,8 +70,14 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
         className="relative mb-sm min-w-[44px] min-h-[44px]"
         aria-label={`View ${creator?.username}'s profile`}
       >
-        <div className="w-[44px] h-[44px] rounded-full bg-bg-tertiary border-2 border-white flex items-center justify-center text-[20px]">
-          {creator?.avatar}
+        <div className="w-[44px] h-[44px] rounded-full bg-bg-tertiary border-2 border-white flex items-center justify-center text-[20px] overflow-hidden">
+          {avatarSrc && avatarSrc.startsWith('data:') ? (
+            <img src={avatarSrc} alt="" className="w-full h-full object-cover" />
+          ) : avatarSrc ? (
+            avatarSrc
+          ) : (
+            <User size={20} className="text-text-muted" />
+          )}
         </div>
         <div
           className="absolute -bottom-[6px] left-1/2 -translate-x-1/2 w-[18px] h-[18px] rounded-full flex items-center justify-center"

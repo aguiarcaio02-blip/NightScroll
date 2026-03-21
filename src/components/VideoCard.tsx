@@ -37,6 +37,19 @@ export default function VideoCard({ video, onProfileClick }: Props) {
 
   return (
     <div className="video-card overflow-hidden" style={{ background: video.gradient }}>
+      {/* Actual video element */}
+      {video.videoUrl && (
+        <video
+          src={video.videoUrl}
+          className="absolute inset-0 w-full h-full object-cover z-[1]"
+          loop
+          muted={muted}
+          autoPlay={!paused}
+          playsInline
+          poster={video.thumbnailUrl}
+        />
+      )}
+
       {/* Tap area */}
       <div
         className="absolute inset-0 z-[5]"

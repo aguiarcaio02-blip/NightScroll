@@ -23,13 +23,16 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const { openTip, setActiveTab: setAppTab, currentUser } = useApp();
+  const { openTip, setActiveTab: setAppTab, currentUser, userVideos } = useApp();
 
   // Use current user data for own profile
   const displayAvatar = isOwn && currentUser?.avatar ? currentUser.avatar : creator.avatar;
   const displayBio = isOwn && currentUser ? (currentUser.bio || 'Welcome to my profile! Edit to add your bio.') : creator.bio;
 
-  const creatorVideos = videos.filter(v => v.creatorId === creator.id);
+  // For own profile, include user-posted videos
+  const creatorVideos = isOwn
+    ? [...userVideos, ...videos.filter(v => v.creatorId === creator.id)]
+    : videos.filter(v => v.creatorId === creator.id);
   const premiumVideos = creatorVideos.filter(v => v.isPremium);
   const displayVideos = activeTab === 'premium' ? premiumVideos : creatorVideos;
 
@@ -207,6 +210,9 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
               className="relative aspect-[9/16] rounded-[4px] overflow-hidden cursor-pointer group"
               style={{ background: video.gradient }}
             >
+              {video.thumbnailUrl && (
+                <img src={video.thumbnailUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              )}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
               {video.isPremium && (
                 <div className="absolute top-[4px] right-[4px]">

@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
+import { Video } from '@/lib/mock-data';
 
 export interface UserAccount {
   email: string;
@@ -47,6 +48,7 @@ interface AppContextType {
   setCurrentVideoId: (id: string | null) => void;
   userPosts: UserPost[];
   addPost: (post: Omit<UserPost, 'id' | 'createdAt'>) => void;
+  userVideos: Video[];
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -86,6 +88,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
     setUserPosts(prev => [newPost, ...prev]);
   }, []);
+
+  // Convert user posts to Video format for feed/profile display
+  const userVideos: Video[] = useMemo(() => {
+    return userPosts.map(post => ({
+      id: post.id,
+      creatorId: currentUser?.username || 'me',
+      caption: post.caption + (post.tags.length > 0 ? ' ' + post.tags.join(' ') : ''),
+      hashtags: post.tags,
+      sound: 'Original audio',
+      likes: 0,
+      comments: 0,
+      shares: 0,
+      views: 0,
+      isPremium: post.premiumContent,
+      gradient: 'linear-gradient(135deg, #1a1a2e, #16213e)',
+      duration: 15,
+      videoUrl: post.videoUrl,
+      thumbnailUrl: post.thumbnailUrl,
+    }));
+  }, [userPosts, currentUser]);
 
   const openTip = useCallback((creatorId: string) => {
     setTipCreatorId(creatorId);
@@ -128,7 +150,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       shareOpen, setShareOpen,
       tipOpen, setTipOpen, tipCreatorId, openTip,
       currentVideoId, setCurrentVideoId,
-      userPosts, addPost,
+      userPosts, addPost, userVideos,
     }}>
       {children}
     </AppContext.Provider>

@@ -2,6 +2,7 @@
 
 import { Video as VideoIcon } from 'lucide-react';
 import { videos } from '@/lib/mock-data';
+import { useApp } from '@/lib/AppContext';
 import VideoCard from './VideoCard';
 import FeedTabs from './FeedTabs';
 
@@ -10,12 +11,17 @@ interface Props {
 }
 
 export default function VideoFeed({ onProfileClick }: Props) {
+  const { userVideos } = useApp();
+
+  // Combine user posts with mock videos — user posts first
+  const allVideos = [...userVideos, ...videos];
+
   return (
     <div className="relative h-full">
       <FeedTabs />
       <div className="feed-container">
-        {videos.length > 0 ? (
-          videos.map((video) => (
+        {allVideos.length > 0 ? (
+          allVideos.map((video) => (
             <VideoCard key={video.id} video={video} onProfileClick={onProfileClick} />
           ))
         ) : (
