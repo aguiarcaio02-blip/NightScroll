@@ -16,8 +16,22 @@ export default function VideoCard({ video, onProfileClick }: Props) {
   const [paused, setPaused] = useState(false);
   const [showHeart, setShowHeart] = useState(false);
   const [lastTap, setLastTap] = useState(0);
+  const [progress, setProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const creator = getCreator(video.creatorId);
+
+  // Track video progress
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    const handleTimeUpdate = () => {
+      if (el.duration && isFinite(el.duration)) {
+        setProgress((el.currentTime / el.duration) * 100);
+      }
+    };
+    el.addEventListener('timeupdate', handleTimeUpdate);
+    return () => el.removeEventListener('timeupdate', handleTimeUpdate);
+  }, [video.videoUrl]);
 
   // Sync muted state to video element imperatively
   useEffect(() => {
@@ -150,7 +164,10 @@ export default function VideoCard({ video, onProfileClick }: Props) {
 
       {/* Progress bar */}
       <div className="absolute bottom-0 left-0 right-0 h-[3px] z-[20]" style={{ background: 'rgba(255,255,255,0.2)' }}>
-        <div className="h-full bg-accent-primary animate-progress" style={{ animationDuration: `${video.duration}s` }} />
+        <div
+          className="h-full bg-accent-primary transition-[width] duration-200 ease-linear"
+          style={{ width: `${progress}%` }}
+        />
       </div>
     </div>
   );
