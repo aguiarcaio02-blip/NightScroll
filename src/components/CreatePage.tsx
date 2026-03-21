@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ChevronLeft, Upload, Camera, Image, Crown, MessageCircle, Share2, Shield, Eye } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
+import CameraRecorder from './CameraRecorder';
 
 const suggestedTags = ['#exclusive', '#premium', '#newcontent', '#fyp', '#trending', '#latenight', '#dance', '#aesthetic'];
 
@@ -16,6 +17,7 @@ const settingsRows = [
 export default function CreatePage() {
   const { setActiveTab } = useApp();
   const [step, setStep] = useState(1);
+  const [showCamera, setShowCamera] = useState(false);
   const [caption, setCaption] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [toggles, setToggles] = useState<Record<string, boolean>>({
@@ -32,6 +34,15 @@ export default function CreatePage() {
   const toggleSetting = (label: string) => {
     setToggles(prev => ({ ...prev, [label]: !prev[label] }));
   };
+
+  if (showCamera) {
+    return (
+      <CameraRecorder
+        onRecorded={() => { setShowCamera(false); setStep(2); }}
+        onCancel={() => setShowCamera(false)}
+      />
+    );
+  }
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar bg-bg-primary">
@@ -65,7 +76,7 @@ export default function CreatePage() {
           {/* Record / Gallery buttons */}
           <div className="flex gap-md w-full max-w-[340px]">
             <button
-              onClick={() => setStep(2)}
+              onClick={() => setShowCamera(true)}
               className="flex-1 flex items-center justify-center gap-sm py-md rounded-[8px] text-white font-semibold text-[14px] min-h-[44px]"
               style={{ background: 'linear-gradient(135deg, #D946EF, #A855F7)' }}
             >
