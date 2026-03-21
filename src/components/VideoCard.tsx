@@ -52,7 +52,7 @@ export default function VideoCard({ video, onProfileClick }: Props) {
     setLastTap(now);
   }, [lastTap]);
 
-  const handleMuteToggle = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+  const handleMuteToggle = useCallback((e: React.PointerEvent) => {
     e.stopPropagation();
     e.preventDefault();
     setMuted(prev => !prev);
@@ -118,9 +118,8 @@ export default function VideoCard({ video, onProfileClick }: Props) {
 
       {/* Mute toggle — z-[30] to ensure it's above the tap area */}
       <button
-        onClick={handleMuteToggle}
-        onTouchEnd={handleMuteToggle}
-        className="absolute top-[60px] right-md z-[30] w-[44px] h-[44px] rounded-full flex items-center justify-center"
+        onPointerDown={handleMuteToggle}
+        className="absolute top-[60px] right-md z-[30] w-[44px] h-[44px] rounded-full flex items-center justify-center touch-none"
         style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
         aria-label={muted ? 'Unmute' : 'Mute'}
       >
