@@ -2,9 +2,17 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
+export interface UserAccount {
+  email: string;
+  username: string;
+}
+
 interface AppContextType {
   ageVerified: boolean;
   setAgeVerified: (v: boolean) => void;
+  signedUp: boolean;
+  currentUser: UserAccount | null;
+  signUp: (account: UserAccount) => void;
   activeTab: string;
   setActiveTab: (t: string) => void;
   feedTab: string;
@@ -23,6 +31,16 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | null>(null);
 
+function loadUser(): UserAccount | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = localStorage.getItem('nightscroll_user');
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [ageVerified, setAgeVerified] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -30,6 +48,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     return false;
   });
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(loadUser);
   const [activeTab, setActiveTab] = useState('home');
   const [feedTab, setFeedTab] = useState('foryou');
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -50,9 +69,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const signUp = useCallback((account: UserAccount) => {
+    setCurrentUser(account);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nightscroll_user', JSON.stringify(account));
+    }
+  }, []);
+
   return (
     <AppContext.Provider value={{
       ageVerified, setAgeVerified: handleSetAgeVerified,
+      signedUp: currentUser !== null,
+      currentUser, signUp,
       activeTab, setActiveTab,
       feedTab, setFeedTab,
       commentsOpen, setCommentsOpen,

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AppProvider, useApp } from '@/lib/AppContext';
 import { creators } from '@/lib/mock-data';
 import AgeGate from '@/components/AgeGate';
+import SignUpScreen from '@/components/SignUpScreen';
 import BottomNav from '@/components/BottomNav';
 import Sidebar from '@/components/Sidebar';
 import VideoFeed from '@/components/VideoFeed';
@@ -17,11 +18,15 @@ import ShareSheet from '@/components/ShareSheet';
 import TipOverlay from '@/components/TipOverlay';
 
 function AppContent() {
-  const { ageVerified, activeTab, setActiveTab } = useApp();
+  const { ageVerified, signedUp, currentUser, activeTab, setActiveTab } = useApp();
   const [viewingProfile, setViewingProfile] = useState<string | null>(null);
 
   if (!ageVerified) {
     return <AgeGate />;
+  }
+
+  if (!signedUp) {
+    return <SignUpScreen />;
   }
 
   const handleProfileClick = (creatorId: string) => {
@@ -68,8 +73,8 @@ function AppContent() {
           <ProfilePage
             creator={{
               id: 'me',
-              username: 'your_name',
-              displayName: 'Your Name',
+              username: currentUser?.username || 'user',
+              displayName: currentUser?.username || 'User',
               avatar: '😎',
               bio: 'Welcome to my profile! Edit to add your bio.',
               verified: false,
