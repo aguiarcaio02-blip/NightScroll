@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, BadgeCheck, Crown, Send, Grid3X3, Lock, Heart, Play, DollarSign, Share2, Settings, User } from 'lucide-react';
-import { Creator, formatCount } from '@/lib/mock-data';
+import { ChevronLeft, BadgeCheck, Crown, Send, Grid3X3, Lock, Heart, Play, DollarSign, Share2, Settings, User, X } from 'lucide-react';
+import { Creator, Video, formatCount } from '@/lib/mock-data';
 import { useApp } from '@/lib/AppContext';
 import EditProfileModal from './EditProfileModal';
+import VideoCard from './VideoCard';
 
 interface Props {
   creator: Creator;
@@ -23,6 +24,7 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const { openTip, setActiveTab: setAppTab, currentUser, myVideos, feedVideos } = useApp();
 
   // Use current user data for own profile
@@ -207,6 +209,7 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
           displayVideos.map((video) => (
             <div
               key={video.id}
+              onClick={() => setSelectedVideo(video)}
               className="relative aspect-[9/16] rounded-[4px] overflow-hidden cursor-pointer group"
               style={{ background: video.gradient }}
             >
@@ -237,6 +240,20 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
 
       {/* Edit Profile Modal */}
       {isOwn && <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} />}
+
+      {/* Full-screen video viewer */}
+      {selectedVideo && (
+        <div className="fixed inset-0 z-[200] bg-black">
+          <VideoCard video={selectedVideo} onProfileClick={() => {}} />
+          <button
+            onClick={() => setSelectedVideo(null)}
+            className="absolute top-[16px] left-[16px] z-[300] w-[40px] h-[40px] rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
+            aria-label="Close video"
+          >
+            <X size={22} color="white" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
