@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, FlipVertical } from 'lucide-react';
 
 interface Props {
-  onRecorded: () => void;
+  onRecorded: (videoBlob: Blob, thumbnailUrl: string) => void;
   onCancel: () => void;
 }
 
@@ -201,7 +201,21 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
     mr.onstop = () => {
-      onRecorded();
+      const mType = getSupportedMimeType() || 'video/webm';
+      const blob = new Blob(chunksRef.current, { type: mType });
+
+      // Generate thumbnail from the last canvas frame
+      let thumbnailUrl = '';
+      if (canvasRef.current) {
+        thumbnailUrl = canvasRef.current.toDataURL('image/jpeg', 0.6);
+      }
+
+      // Stop camera streams
+      videoStreamRef.current?.getTracks().forEach(t => t.stop());
+      audioStreamRef.current?.getTracks().forEach(t => t.stop());
+      cancelAnimationFrame(animFrameRef.current);
+
+      onRecorded(blob, thumbnailUrl);
     };
     mr.start(1000); // Collect data every second
     mediaRecorderRef.current = mr;

@@ -18,6 +18,9 @@ export default function CreatePage() {
   const { setActiveTab } = useApp();
   const [step, setStep] = useState(1);
   const [showCamera, setShowCamera] = useState(false);
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [toggles, setToggles] = useState<Record<string, boolean>>({
@@ -38,7 +41,13 @@ export default function CreatePage() {
   if (showCamera) {
     return (
       <CameraRecorder
-        onRecorded={() => { setShowCamera(false); setStep(2); }}
+        onRecorded={(blob, thumb) => {
+          setVideoBlob(blob);
+          setVideoUrl(URL.createObjectURL(blob));
+          setThumbnailUrl(thumb);
+          setShowCamera(false);
+          setStep(2);
+        }}
         onCancel={() => setShowCamera(false)}
       />
     );
@@ -96,8 +105,21 @@ export default function CreatePage() {
         <div className="px-lg pt-lg pb-[80px]">
           {/* Preview + Caption */}
           <div className="flex gap-md mb-xl">
-            <div className="w-[120px] aspect-[9/16] rounded-[8px] bg-bg-tertiary flex items-center justify-center shrink-0">
-              <div className="w-0 h-0 border-l-[16px] border-l-white border-t-[10px] border-t-transparent border-b-[10px] border-b-transparent opacity-50" />
+            <div className="w-[120px] aspect-[9/16] rounded-[8px] bg-bg-tertiary flex items-center justify-center shrink-0 overflow-hidden relative">
+              {videoUrl ? (
+                <video
+                  src={videoUrl}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  muted
+                  loop
+                  autoPlay
+                  playsInline
+                />
+              ) : thumbnailUrl ? (
+                <img src={thumbnailUrl} alt="Video preview" className="absolute inset-0 w-full h-full object-cover" />
+              ) : (
+                <div className="w-0 h-0 border-l-[16px] border-l-white border-t-[10px] border-t-transparent border-b-[10px] border-b-transparent opacity-50" />
+              )}
             </div>
             <div className="flex-1 relative">
               <textarea
