@@ -16,6 +16,7 @@ import ProfilePage from '@/components/ProfilePage';
 import CommentsDrawer from '@/components/CommentsDrawer';
 import ShareSheet from '@/components/ShareSheet';
 import TipOverlay from '@/components/TipOverlay';
+import PullToRefresh from '@/components/PullToRefresh';
 
 function AppContent() {
   const { ageVerified, signedUp, currentUser, activeTab, setActiveTab } = useApp();
@@ -96,16 +97,18 @@ function AppContent() {
   };
 
   return (
-    <div className="h-full">
-      <div className="lg:ml-[240px] h-full pb-[60px] lg:pb-0">
-        {renderPage()}
+    <PullToRefresh>
+      <div className="h-full">
+        <div className="lg:ml-[240px] h-full pb-[60px] lg:pb-0">
+          {renderPage()}
+        </div>
+        <Sidebar />
+        <BottomNav isFeed={activeTab === 'home'} />
+        <CommentsDrawer />
+        <ShareSheet />
+        <TipOverlay />
       </div>
-      <Sidebar />
-      <BottomNav isFeed={activeTab === 'home'} />
-      <CommentsDrawer />
-      <ShareSheet />
-      <TipOverlay />
-    </div>
+    </PullToRefresh>
   );
 }
 
