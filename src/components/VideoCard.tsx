@@ -19,32 +19,30 @@ export default function VideoCard({ video, onProfileClick }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const creator = getCreator(video.creatorId);
 
-  // Sync muted state to video element
+  // Sync muted state to video element imperatively
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = muted;
-    }
+    const el = videoRef.current;
+    if (!el) return;
+    el.muted = muted;
   }, [muted]);
 
   // Sync paused state to video element
   useEffect(() => {
-    if (videoRef.current) {
-      if (paused) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play().catch(() => {});
-      }
+    const el = videoRef.current;
+    if (!el) return;
+    if (paused) {
+      el.pause();
+    } else {
+      el.play().catch(() => {});
     }
   }, [paused]);
 
   const handleTap = useCallback(() => {
     const now = Date.now();
     if (now - lastTap < 300) {
-      // Double tap — like
       setShowHeart(true);
       setTimeout(() => setShowHeart(false), 600);
     } else {
-      // Single tap — pause/resume
       setTimeout(() => {
         if (Date.now() - now >= 300) {
           setPaused(p => !p);
@@ -53,6 +51,12 @@ export default function VideoCard({ video, onProfileClick }: Props) {
     }
     setLastTap(now);
   }, [lastTap]);
+
+  const handleMuteToggle = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setMuted(prev => !prev);
+  }, []);
 
   return (
     <div className="video-card overflow-hidden" style={{ background: video.gradient }}>
@@ -63,7 +67,7 @@ export default function VideoCard({ video, onProfileClick }: Props) {
           src={video.videoUrl}
           className="absolute inset-0 w-full h-full object-cover z-[1]"
           loop
-          muted={muted}
+          muted
           autoPlay
           playsInline
           poster={video.thumbnailUrl}
@@ -104,7 +108,7 @@ export default function VideoCard({ video, onProfileClick }: Props) {
       {/* Premium badge */}
       {video.isPremium && (
         <div
-          className="absolute top-[60px] left-md z-10 flex items-center gap-[4px] px-sm py-[3px] rounded-full"
+          className="absolute top-[60px] left-md z-[20] flex items-center gap-[4px] px-sm py-[3px] rounded-full"
           style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)' }}
         >
           <Crown size={11} color="black" strokeWidth={2.5} />
@@ -112,14 +116,15 @@ export default function VideoCard({ video, onProfileClick }: Props) {
         </div>
       )}
 
-      {/* Mute toggle */}
+      {/* Mute toggle — z-[30] to ensure it's above the tap area */}
       <button
-        onClick={(e) => { e.stopPropagation(); setMuted(!muted); }}
-        className="absolute top-[60px] right-md z-10 w-[36px] h-[36px] rounded-full flex items-center justify-center"
-        style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+        onClick={handleMuteToggle}
+        onTouchEnd={handleMuteToggle}
+        className="absolute top-[60px] right-md z-[30] w-[44px] h-[44px] rounded-full flex items-center justify-center"
+        style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
         aria-label={muted ? 'Unmute' : 'Mute'}
       >
-        {muted ? <VolumeX size={16} color="white" /> : <Volume2 size={16} color="white" />}
+        {muted ? <VolumeX size={18} color="white" /> : <Volume2 size={18} color="white" />}
       </button>
 
       {/* Premium paywall overlay */}
@@ -145,7 +150,7 @@ export default function VideoCard({ video, onProfileClick }: Props) {
       <VideoInfo video={video} onProfileClick={onProfileClick} />
 
       {/* Progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-[3px] z-10" style={{ background: 'rgba(255,255,255,0.2)' }}>
+      <div className="absolute bottom-0 left-0 right-0 h-[3px] z-[20]" style={{ background: 'rgba(255,255,255,0.2)' }}>
         <div className="h-full bg-accent-primary animate-progress" style={{ animationDuration: `${video.duration}s` }} />
       </div>
     </div>
