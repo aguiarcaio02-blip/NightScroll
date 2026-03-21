@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, FlipVertical, Circle, Square } from 'lucide-react';
+import { X, FlipVertical } from 'lucide-react';
 
 interface Props {
   onRecorded: () => void;
@@ -19,6 +19,7 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
   const [elapsed, setElapsed] = useState(0);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [error, setError] = useState('');
+  const [cameraInfo, setCameraInfo] = useState('');
 
   const startCamera = useCallback(async (facing: 'user' | 'environment') => {
     // Stop any existing stream
@@ -27,36 +28,80 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
     }
 
     try {
-      const isFront = facing === 'user';
+      // Step 1: Get a basic stream first to probe the camera's native capabilities
+      const probeStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facing },
+        audio: false,
+      });
+
+      const probeTrack = probeStream.getVideoTracks()[0];
+      const capabilities = probeTrack.getCapabilities?.() as Record<string, unknown> | undefined;
+      const settings = probeTrack.getSettings();
+
+      // Read native resolution from capabilities
+      let nativeWidth = (capabilities?.width as { max?: number })?.max || settings.width || 640;
+      let nativeHeight = (capabilities?.height as { max?: number })?.max || settings.height || 480;
+
+      // Stop the probe stream
+      probeStream.getTracks().forEach(t => t.stop());
+
+      // Step 2: Calculate optimal 9:16 resolution from native capabilities
+      // For 9:16, we want height > width. Use the native max to determine the best fit.
+      // Pick the resolution that fits within native bounds without requiring digital zoom.
+      let targetWidth: number;
+      let targetHeight: number;
+
+      // Ensure we know the orientation (some cameras report landscape natively)
+      const maxDim = Math.max(nativeWidth, nativeHeight);
+      const minDim = Math.min(nativeWidth, nativeHeight);
+
+      // For 9:16 portrait video: width is the smaller dimension
+      // Target: width = minDim, height = minDim * 16/9
+      // But cap height at maxDim
+      targetWidth = minDim;
+      targetHeight = Math.round(minDim * 16 / 9);
+      if (targetHeight > maxDim) {
+        targetHeight = maxDim;
+        targetWidth = Math.round(maxDim * 9 / 16);
+      }
+
+      const info = `${facing === 'user' ? 'Front' : 'Back'}: native ${nativeWidth}x${nativeHeight} → requesting ${targetWidth}x${targetHeight}`;
+      setCameraInfo(info);
+      console.log('[NightScroll Camera]', info);
+
+      // Step 3: Open the real stream with optimal constraints
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: facing,
+          width: { ideal: targetWidth, max: targetWidth },
+          height: { ideal: targetHeight, max: targetHeight },
           aspectRatio: { ideal: 9 / 16 },
-          // Front cameras have a narrower FOV — requesting high res causes digital zoom.
-          // Use lower constraints for front camera to avoid cropping.
-          ...(isFront
-            ? { width: { ideal: 480 }, height: { ideal: 854 } }
-            : { width: { ideal: 1080 }, height: { ideal: 1920 } }
-          ),
         },
         audio: true,
       });
 
-      // Try to set zoom to minimum if supported
+      // Step 4: Set zoom to minimum if supported
       const videoTrack = stream.getVideoTracks()[0];
-      const capabilities = videoTrack.getCapabilities?.() as Record<string, unknown> | undefined;
-      if (capabilities?.zoom) {
-        const zoomRange = capabilities.zoom as { min: number };
+      const realCapabilities = videoTrack.getCapabilities?.() as Record<string, unknown> | undefined;
+      if (realCapabilities?.zoom) {
+        const zoomRange = realCapabilities.zoom as { min: number };
         try {
-          await videoTrack.applyConstraints({ advanced: [{ zoom: zoomRange.min } as MediaTrackConstraintSet] });
+          await videoTrack.applyConstraints({
+            advanced: [{ zoom: zoomRange.min } as MediaTrackConstraintSet],
+          });
         } catch { /* zoom not adjustable */ }
       }
+
+      const finalSettings = videoTrack.getSettings();
+      console.log('[NightScroll Camera] Actual:', finalSettings.width, 'x', finalSettings.height);
+
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
       setError('');
-    } catch {
+    } catch (err) {
+      console.error('[NightScroll Camera] Error:', err);
       setError('Camera access denied. Please allow camera permissions.');
     }
   }, []);
@@ -89,8 +134,6 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
     mr.onstop = () => {
-      // Recording complete — in a real app, we'd save the blob
-      // For the prototype, just move to the next step
       onRecorded();
     };
     mr.start();
