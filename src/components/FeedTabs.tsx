@@ -12,8 +12,8 @@ export default function FeedTabs() {
   const { feedTab, setFeedTab } = useApp();
 
   return (
-    <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center pt-[52px] pb-md">
-      <div className="flex items-center gap-xl relative">
+    <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center pt-[52px] pb-md pointer-events-none">
+      <div className="flex items-center gap-xl relative pointer-events-auto">
         {tabs.map((tab) => {
           const active = feedTab === tab.id;
           return (
