@@ -52,6 +52,11 @@ export default function VideoCard({ video, onProfileClick }: Props) {
   }, [paused]);
 
   const handleTap = useCallback(() => {
+    // Skip if mute button was just tapped
+    if (muteRef.current) {
+      muteRef.current = false;
+      return;
+    }
     const now = Date.now();
     if (now - lastTap < 300) {
       setShowHeart(true);
@@ -66,9 +71,10 @@ export default function VideoCard({ video, onProfileClick }: Props) {
     setLastTap(now);
   }, [lastTap]);
 
-  const handleMuteToggle = useCallback((e: React.PointerEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
+  const muteRef = useRef(false);
+
+  const handleMuteToggle = useCallback(() => {
+    muteRef.current = true;
     setMuted(prev => !prev);
   }, []);
 
@@ -132,8 +138,8 @@ export default function VideoCard({ video, onProfileClick }: Props) {
 
       {/* Mute toggle — z-[30] to ensure it's above the tap area */}
       <button
-        onPointerDown={handleMuteToggle}
-        className="absolute top-[60px] right-md z-[30] w-[44px] h-[44px] rounded-full flex items-center justify-center touch-none"
+        onClick={handleMuteToggle}
+        className="absolute top-[60px] right-md z-[30] w-[44px] h-[44px] rounded-full flex items-center justify-center"
         style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
         aria-label={muted ? 'Unmute' : 'Mute'}
       >
