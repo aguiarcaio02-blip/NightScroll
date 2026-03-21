@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, BadgeCheck, Crown, Send, Grid3X3, Lock, Heart, Play, DollarSign, Share2, Settings } from 'lucide-react';
+import { ChevronLeft, BadgeCheck, Crown, Send, Grid3X3, Lock, Heart, Play, DollarSign, Share2, Settings, User } from 'lucide-react';
 import { Creator, videos, formatCount } from '@/lib/mock-data';
 import { useApp } from '@/lib/AppContext';
 import EditProfileModal from './EditProfileModal';
@@ -50,8 +50,14 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
       <div className="flex flex-col items-center px-xl pt-2xl pb-lg">
         {/* Avatar */}
         <div className="relative mb-md">
-          <div className="w-[80px] h-[80px] rounded-full bg-bg-tertiary flex items-center justify-center text-[36px] border-2 border-border-default">
-            {displayAvatar}
+          <div className="w-[80px] h-[80px] rounded-full bg-bg-tertiary flex items-center justify-center text-[36px] border-2 border-border-default overflow-hidden">
+            {displayAvatar && displayAvatar.startsWith('data:') ? (
+              <img src={displayAvatar} alt="Profile" className="w-full h-full object-cover" />
+            ) : displayAvatar ? (
+              displayAvatar
+            ) : (
+              <User size={36} className="text-text-muted" />
+            )}
           </div>
           {creator.verified && (
             <div className="absolute -bottom-[2px] -right-[2px] w-[22px] h-[22px] rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', border: '2px solid #0A0A0A' }}>

@@ -1,14 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Check } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { X, Check, Camera } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
-
-const avatarOptions = [
-  '😎', '🌙', '🔥', '💋', '👑', '✨', '🖤', '♠️',
-  '🌹', '💜', '🦋', '🌊', '🎭', '💫', '🐺', '🦊',
-  '🍑', '🌸', '💎', '🎵', '🌺', '⭐', '🔮', '🎀',
-];
 
 interface Props {
   open: boolean;
@@ -18,19 +12,54 @@ interface Props {
 export default function EditProfileModal({ open, onClose }: Props) {
   const { currentUser, updateProfile } = useApp();
   const [bio, setBio] = useState(currentUser?.bio || '');
-  const [selectedAvatar, setSelectedAvatar] = useState(currentUser?.avatar || '😎');
+  const [avatarPreview, setAvatarPreview] = useState(currentUser?.avatar || '');
   const [saved, setSaved] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!open) return null;
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      // Resize to keep localStorage small
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const size = 200;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // Crop to square from center
+        const min = Math.min(img.width, img.height);
+        const sx = (img.width - min) / 2;
+        const sy = (img.height - min) / 2;
+        ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+
+        setAvatarPreview(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.src = result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSave = () => {
-    updateProfile({ bio: bio.trim(), avatar: selectedAvatar });
+    updateProfile({ bio: bio.trim(), avatar: avatarPreview });
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
       onClose();
     }, 800);
   };
+
+  const hasImage = avatarPreview.startsWith('data:');
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center" onClick={onClose}>
@@ -64,29 +93,46 @@ export default function EditProfileModal({ open, onClose }: Props) {
           <div className="mb-2xl">
             <label className="text-[13px] font-semibold text-text-secondary mb-md block">Profile Picture</label>
 
-            {/* Current avatar preview */}
-            <div className="flex justify-center mb-lg">
-              <div className="w-[80px] h-[80px] rounded-full bg-bg-hover border-2 border-accent-primary flex items-center justify-center text-[36px]">
-                {selectedAvatar}
-              </div>
-            </div>
-
-            {/* Avatar grid */}
-            <div className="grid grid-cols-6 gap-sm">
-              {avatarOptions.map((emoji) => (
+            <div className="flex flex-col items-center gap-lg">
+              {/* Avatar preview */}
+              <div className="relative">
+                <div className="w-[100px] h-[100px] rounded-full bg-bg-hover border-2 border-accent-primary flex items-center justify-center overflow-hidden">
+                  {hasImage ? (
+                    <img src={avatarPreview} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[44px]">{avatarPreview || '😎'}</span>
+                  )}
+                </div>
+                {/* Camera overlay */}
                 <button
-                  key={emoji}
-                  onClick={() => setSelectedAvatar(emoji)}
-                  className="w-full aspect-square rounded-[12px] flex items-center justify-center text-[24px] transition-all"
-                  style={{
-                    background: selectedAvatar === emoji ? '#2A2A2A' : 'transparent',
-                    border: selectedAvatar === emoji ? '2px solid #D946EF' : '2px solid transparent',
-                  }}
-                  aria-label={`Select ${emoji} as profile picture`}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute bottom-0 right-0 w-[32px] h-[32px] rounded-full flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg, #D946EF, #A855F7)', border: '2px solid #1A1A1A' }}
+                  aria-label="Change profile picture"
                 >
-                  {emoji}
+                  <Camera size={14} color="white" />
                 </button>
-              ))}
+              </div>
+
+              {/* Upload button */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-xl py-sm rounded-full bg-bg-hover border border-border-default text-[13px] text-white font-medium hover:bg-border-default transition-colors min-h-[40px]"
+              >
+                {hasImage ? 'Change Photo' : 'Upload Photo'}
+              </button>
+
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+                aria-label="Upload profile picture"
+              />
+
+              <p className="text-[11px] text-text-faint text-center">JPG, PNG, or GIF. Will be cropped to a circle.</p>
             </div>
           </div>
 
