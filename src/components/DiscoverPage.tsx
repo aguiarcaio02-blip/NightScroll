@@ -58,7 +58,16 @@ export default function DiscoverPage({ onProfileClick }: Props) {
       </div>
 
       <div className="px-lg pb-[80px]">
+        {creators.length === 0 && videos.length === 0 && trendingTags.length === 0 && (
+          <div className="flex flex-col items-center justify-center pt-[80px]">
+            <Search size={48} className="text-text-faint mb-lg" />
+            <p className="text-[16px] font-bold text-white mb-sm">Nothing to explore yet</p>
+            <p className="text-[13px] text-text-muted text-center">Be the first creator on the platform!</p>
+          </div>
+        )}
+
         {/* Trending Tags */}
+        {trendingTags.length > 0 && (
         <div className="mb-2xl">
           <div className="flex items-center gap-sm mb-md">
             <TrendingUp size={16} className="text-accent-primary" />
@@ -76,8 +85,10 @@ export default function DiscoverPage({ onProfileClick }: Props) {
             ))}
           </div>
         </div>
+        )}
 
         {/* Top Creators */}
+        {creators.length > 0 && (
         <div className="mb-2xl">
           <div className="flex items-center gap-sm mb-md">
             <Star size={16} className="text-accent-gold" />
@@ -105,8 +116,10 @@ export default function DiscoverPage({ onProfileClick }: Props) {
             ))}
           </div>
         </div>
+        )}
 
         {/* Explore Grid */}
+        {videos.length > 0 && (
         <div>
           <h2 className="text-[16px] font-bold text-white mb-md">Explore</h2>
           <div className="grid grid-cols-3 gap-[2px]">
@@ -148,6 +161,7 @@ export default function DiscoverPage({ onProfileClick }: Props) {
             })}
           </div>
         </div>
+        )}
       </div>
     </div>
   );

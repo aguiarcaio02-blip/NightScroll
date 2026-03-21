@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, Send, DollarSign, BadgeCheck } from 'lucide-react';
+import { ChevronLeft, Send, DollarSign, BadgeCheck, MessageCircle } from 'lucide-react';
 import { conversations, chatMessages, creators } from '@/lib/mock-data';
 import { useApp } from '@/lib/AppContext';
 
@@ -133,42 +133,45 @@ export default function MessagesPage({ onProfileClick }: Props) {
 
       {/* Conversation list */}
       <div className="pb-[80px]">
-        {conversations.map((conv) => (
-          <button
-            key={conv.id}
-            onClick={() => setActiveConv(conv.id)}
-            className="flex items-center gap-md px-lg py-md w-full hover:bg-bg-hover transition-colors text-left"
-          >
-            {/* Avatar with online indicator */}
-            <div className="relative shrink-0">
-              <div className="w-[48px] h-[48px] rounded-full bg-bg-tertiary flex items-center justify-center text-[22px]">
-                {conv.user.avatar}
-              </div>
-              {conv.user.online && (
-                <div className="absolute bottom-0 right-0 w-[12px] h-[12px] rounded-full bg-success" style={{ border: '2px solid #0A0A0A' }} />
-              )}
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-[4px]">
-                <span className="text-[14px] font-bold text-white truncate">{conv.user.displayName}</span>
-                {conv.user.verified && <BadgeCheck size={12} fill="#D946EF" color="#0A0A0A" />}
-              </div>
-              <p className="text-[13px] text-text-muted truncate">{conv.lastMessage}</p>
-            </div>
-
-            {/* Time + unread */}
-            <div className="flex flex-col items-end gap-[4px] shrink-0">
-              <span className="text-[11px] text-text-faint">{conv.timestamp}</span>
-              {conv.unread > 0 && (
-                <div className="w-[20px] h-[20px] rounded-full bg-accent-primary flex items-center justify-center">
-                  <span className="text-[11px] text-white font-bold">{conv.unread}</span>
+        {conversations.length === 0 ? (
+          <div className="flex flex-col items-center justify-center pt-[120px]">
+            <MessageCircle size={48} className="text-text-faint mb-lg" />
+            <p className="text-[16px] font-bold text-white mb-sm">No messages yet</p>
+            <p className="text-[13px] text-text-muted">Start a conversation with a creator</p>
+          </div>
+        ) : (
+          conversations.map((conv) => (
+            <button
+              key={conv.id}
+              onClick={() => setActiveConv(conv.id)}
+              className="flex items-center gap-md px-lg py-md w-full hover:bg-bg-hover transition-colors text-left"
+            >
+              <div className="relative shrink-0">
+                <div className="w-[48px] h-[48px] rounded-full bg-bg-tertiary flex items-center justify-center text-[22px]">
+                  {conv.user.avatar}
                 </div>
-              )}
-            </div>
-          </button>
-        ))}
+                {conv.user.online && (
+                  <div className="absolute bottom-0 right-0 w-[12px] h-[12px] rounded-full bg-success" style={{ border: '2px solid #0A0A0A' }} />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-[4px]">
+                  <span className="text-[14px] font-bold text-white truncate">{conv.user.displayName}</span>
+                  {conv.user.verified && <BadgeCheck size={12} fill="#D946EF" color="#0A0A0A" />}
+                </div>
+                <p className="text-[13px] text-text-muted truncate">{conv.lastMessage}</p>
+              </div>
+              <div className="flex flex-col items-end gap-[4px] shrink-0">
+                <span className="text-[11px] text-text-faint">{conv.timestamp}</span>
+                {conv.unread > 0 && (
+                  <div className="w-[20px] h-[20px] rounded-full bg-accent-primary flex items-center justify-center">
+                    <span className="text-[11px] text-white font-bold">{conv.unread}</span>
+                  </div>
+                )}
+              </div>
+            </button>
+          ))
+        )}
       </div>
     </div>
   );

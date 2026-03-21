@@ -109,9 +109,19 @@ export default function InboxPage() {
       </div>
 
       <div className="pb-[80px]">
-        {renderGroup('Today', groups.today)}
-        {renderGroup('This Week', groups.thisWeek)}
-        {renderGroup('Earlier', groups.earlier)}
+        {notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center pt-[120px]">
+            <Bell size={48} className="text-text-faint mb-lg" />
+            <p className="text-[16px] font-bold text-white mb-sm">No notifications yet</p>
+            <p className="text-[13px] text-text-muted">When you get likes, follows, and tips they'll show up here</p>
+          </div>
+        ) : (
+          <>
+            {renderGroup('Today', groups.today)}
+            {renderGroup('This Week', groups.thisWeek)}
+            {renderGroup('Earlier', groups.earlier)}
+          </>
+        )}
       </div>
     </div>
   );
