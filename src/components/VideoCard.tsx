@@ -5,6 +5,7 @@ import { Lock, Crown, Volume2, VolumeX, Heart } from 'lucide-react';
 import { Video, getCreator } from '@/lib/mock-data';
 import ActionSidebar from './ActionSidebar';
 import VideoInfo from './VideoInfo';
+import MuteButton from './MuteButton';
 
 interface Props {
   video: Video;
@@ -121,34 +122,8 @@ export default function VideoCard({ video, onProfileClick }: Props) {
         </div>
       )}
 
-      {/* Mute toggle — uses a div with touch handlers for reliable mobile support */}
-      <div
-        role="button"
-        tabIndex={0}
-        onTouchStart={(e) => {
-          // Mark that we started a touch on this button
-          (e.currentTarget as HTMLElement).dataset.touched = '1';
-        }}
-        onTouchEnd={(e) => {
-          // Only toggle if the touch started on this button (not a scroll)
-          if ((e.currentTarget as HTMLElement).dataset.touched === '1') {
-            e.preventDefault();
-            e.stopPropagation();
-            setMuted(prev => !prev);
-            (e.currentTarget as HTMLElement).dataset.touched = '';
-          }
-        }}
-        onClick={(e) => {
-          // Desktop click fallback
-          e.stopPropagation();
-          setMuted(prev => !prev);
-        }}
-        className="absolute top-[60px] right-md z-[30] w-[48px] h-[48px] rounded-full flex items-center justify-center cursor-pointer select-none"
-        style={{ background: 'rgba(0,0,0,0.6)', WebkitTapHighlightColor: 'transparent' }}
-        aria-label={muted ? 'Unmute' : 'Mute'}
-      >
-        {muted ? <VolumeX size={18} color="white" /> : <Volume2 size={18} color="white" />}
-      </div>
+      {/* Mute toggle */}
+      <MuteButton muted={muted} onToggle={() => setMuted(prev => !prev)} />
 
       {/* Premium paywall overlay */}
       {video.isPremium && (
