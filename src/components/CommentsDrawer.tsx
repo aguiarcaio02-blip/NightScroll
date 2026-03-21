@@ -47,20 +47,17 @@ export default function CommentsDrawer() {
     setSending(true);
 
     try {
-      const comment = await addComment(
+      const { comment, totalCount } = await addComment(
         currentVideoId,
         currentUser.username,
         currentUser.avatar || '',
         newComment.trim()
       );
-      const updatedComments = [...comments, comment];
-      setComments(updatedComments);
+      setComments(prev => [...prev, comment]);
       setNewComment('');
-      // Directly update comment count in local state
+      // Update comment count using the real count from Supabase
       const post = allPosts.find(p => p.id === currentVideoId);
-      if (post) {
-        updatePostCounts(currentVideoId, post.likes, updatedComments.length);
-      }
+      updatePostCounts(currentVideoId, post?.likes ?? 0, totalCount);
     } catch (e) {
       console.error('Failed to send comment:', e);
     } finally {

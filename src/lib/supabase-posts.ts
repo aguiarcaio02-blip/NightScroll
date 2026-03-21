@@ -176,7 +176,7 @@ export interface SupabaseComment {
 }
 
 // Add a comment to a post
-export async function addComment(postId: string, username: string, avatar: string, text: string): Promise<SupabaseComment> {
+export async function addComment(postId: string, username: string, avatar: string, text: string): Promise<{ comment: SupabaseComment; totalCount: number }> {
   const { data, error } = await supabase
     .from('comments')
     .insert({ post_id: postId, username, avatar, text })
@@ -185,15 +185,16 @@ export async function addComment(postId: string, username: string, avatar: strin
 
   if (error) throw new Error(`Add comment failed: ${error.message}`);
 
-  // Update comments count on the post
+  // Get actual count from DB
   const { count } = await supabase
     .from('comments')
     .select('*', { count: 'exact', head: true })
     .eq('post_id', postId);
 
-  await supabase.from('posts').update({ comments_count: count || 0 }).eq('id', postId);
+  const totalCount = count || 0;
+  await supabase.from('posts').update({ comments_count: totalCount }).eq('id', postId);
 
-  return data;
+  return { comment: data, totalCount };
 }
 
 // Fetch comments for a post
