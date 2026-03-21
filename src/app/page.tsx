@@ -79,7 +79,7 @@ function AppContent() {
               avatar: '😎',
               bio: 'Welcome to my profile! Edit to add your bio.',
               verified: false,
-              isLive: false,
+
               online: true,
               followers: 0,
               following: 0,

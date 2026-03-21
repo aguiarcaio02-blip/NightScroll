@@ -5,7 +5,6 @@ export interface Creator {
   avatar: string;
   bio: string;
   verified: boolean;
-  isLive: boolean;
   online: boolean;
   followers: number;
   following: number;
@@ -83,7 +82,7 @@ export const creators: Creator[] = [
     avatar: '🎤',
     bio: 'Music producer & songwriter. Dropping heat daily 🔥',
     verified: true,
-    isLive: false,
+
     online: true,
     followers: 245000,
     following: 312,
@@ -101,7 +100,7 @@ export const creators: Creator[] = [
     avatar: '🎨',
     bio: 'Digital artist & illustrator ✨ Commissions open',
     verified: true,
-    isLive: true,
+
     online: true,
     followers: 89000,
     following: 540,
@@ -118,7 +117,7 @@ export const creators: Creator[] = [
     avatar: '💪',
     bio: 'Certified personal trainer. Transform your body 🏋️',
     verified: false,
-    isLive: false,
+
     online: false,
     followers: 34000,
     following: 189,
@@ -133,7 +132,7 @@ export const creators: Creator[] = [
     avatar: '🌙',
     bio: 'Late night content. ASMR & chill vibes 🎧',
     verified: true,
-    isLive: false,
+
     online: true,
     followers: 512000,
     following: 95,
@@ -151,7 +150,7 @@ export const creators: Creator[] = [
     avatar: '👨‍🍳',
     bio: 'Pro chef cooking up magic. Recipes that slap 🍳',
     verified: false,
-    isLive: false,
+
     online: true,
     followers: 67000,
     following: 220,
@@ -166,7 +165,7 @@ export const creators: Creator[] = [
     avatar: '✈️',
     bio: 'Full-time traveler. 42 countries and counting 🌍',
     verified: true,
-    isLive: false,
+
     online: false,
     followers: 178000,
     following: 410,

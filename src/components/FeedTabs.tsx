@@ -1,7 +1,6 @@
 'use client';
 
 import { useApp } from '@/lib/AppContext';
-import { creators } from '@/lib/mock-data';
 
 const tabs = [
   { id: 'following', label: 'Following' },
@@ -11,17 +10,10 @@ const tabs = [
 
 export default function FeedTabs() {
   const { feedTab, setFeedTab } = useApp();
-  const hasLive = creators.some(c => c.isLive);
 
   return (
     <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center pt-[52px] pb-md">
       <div className="flex items-center gap-xl relative">
-        {hasLive && (
-          <div className="absolute -left-[60px] top-1/2 -translate-y-1/2 flex items-center gap-[4px]">
-            <span className="w-[8px] h-[8px] bg-[#EF4444] rounded-full animate-pulse" />
-            <span className="text-[11px] text-[#EF4444] font-bold">LIVE</span>
-          </div>
-        )}
         {tabs.map((tab) => {
           const active = feedTab === tab.id;
           return (

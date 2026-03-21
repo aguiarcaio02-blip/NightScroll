@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Search, X, TrendingUp, Star, Play, Crown } from 'lucide-react';
 import { creators, videos, trendingTags, formatCount } from '@/lib/mock-data';
 
-const filterPills = ['All', 'Creators', 'Videos', 'Live', 'Premium'];
+const filterPills = ['All', 'Creators', 'Videos', 'Premium'];
 
 interface Props {
   onProfileClick: (creatorId: string) => void;
