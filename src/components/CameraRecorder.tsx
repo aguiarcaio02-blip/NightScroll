@@ -27,14 +27,18 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
     }
 
     try {
+      const isFront = facing === 'user';
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: facing,
           aspectRatio: { ideal: 9 / 16 },
-          width: { ideal: 1080 },
-          height: { ideal: 1920 },
-          zoom: { ideal: 1 },
-        } as MediaTrackConstraints,
+          // Front cameras have a narrower FOV — requesting high res causes digital zoom.
+          // Use lower constraints for front camera to avoid cropping.
+          ...(isFront
+            ? { width: { ideal: 480 }, height: { ideal: 854 } }
+            : { width: { ideal: 1080 }, height: { ideal: 1920 } }
+          ),
+        },
         audio: true,
       });
 
