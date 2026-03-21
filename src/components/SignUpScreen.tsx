@@ -51,7 +51,7 @@ export default function SignUpScreen() {
 
     setFading(true);
     setTimeout(() => {
-      signUp({ email: email.trim(), username: username.trim().toLowerCase() });
+      signUp({ email: email.trim(), username: username.trim().toLowerCase(), bio: '', avatar: '😎' });
     }, 300);
   };
 

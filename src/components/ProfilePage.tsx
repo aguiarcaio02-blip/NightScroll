@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ChevronLeft, BadgeCheck, Crown, Send, Grid3X3, Lock, Heart, Play, DollarSign, Share2, Settings } from 'lucide-react';
 import { Creator, videos, formatCount } from '@/lib/mock-data';
 import { useApp } from '@/lib/AppContext';
+import EditProfileModal from './EditProfileModal';
 
 interface Props {
   creator: Creator;
@@ -21,7 +22,12 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
   const [activeTab, setActiveTab] = useState('videos');
   const [isFollowing, setIsFollowing] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const { openTip, setActiveTab: setAppTab } = useApp();
+  const [editOpen, setEditOpen] = useState(false);
+  const { openTip, setActiveTab: setAppTab, currentUser } = useApp();
+
+  // Use current user data for own profile
+  const displayAvatar = isOwn && currentUser?.avatar ? currentUser.avatar : creator.avatar;
+  const displayBio = isOwn && currentUser ? (currentUser.bio || 'Welcome to my profile! Edit to add your bio.') : creator.bio;
 
   const creatorVideos = videos.filter(v => v.creatorId === creator.id);
   const premiumVideos = creatorVideos.filter(v => v.isPremium);
@@ -45,7 +51,7 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
         {/* Avatar */}
         <div className="relative mb-md">
           <div className="w-[80px] h-[80px] rounded-full bg-bg-tertiary flex items-center justify-center text-[36px] border-2 border-border-default">
-            {creator.avatar}
+            {displayAvatar}
           </div>
           {creator.verified && (
             <div className="absolute -bottom-[2px] -right-[2px] w-[22px] h-[22px] rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', border: '2px solid #0A0A0A' }}>
@@ -63,7 +69,7 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
 
         {/* Bio */}
         <p className="text-[13px] text-text-secondary text-center max-w-[300px] leading-[1.5] mb-xl">
-          {creator.bio}
+          {displayBio}
         </p>
 
         {/* Stats */}
@@ -83,7 +89,10 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
         {/* Action buttons */}
         {isOwn ? (
           <div className="flex items-center gap-sm">
-            <button className="px-xl py-sm rounded-full bg-bg-tertiary border border-border-default text-[14px] text-white font-semibold min-h-[40px]">
+            <button
+              onClick={() => setEditOpen(true)}
+              className="px-xl py-sm rounded-full bg-bg-tertiary border border-border-default text-[14px] text-white font-semibold min-h-[40px]"
+            >
               Edit Profile
             </button>
             <button className="px-xl py-sm rounded-full bg-bg-tertiary border border-border-default text-[14px] text-white font-semibold flex items-center gap-sm min-h-[40px]">
@@ -213,6 +222,9 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
           </div>
         )}
       </div>
+
+      {/* Edit Profile Modal */}
+      {isOwn && <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} />}
     </div>
   );
 }

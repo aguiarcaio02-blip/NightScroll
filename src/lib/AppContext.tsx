@@ -5,6 +5,8 @@ import { createContext, useContext, useState, useCallback, ReactNode } from 'rea
 export interface UserAccount {
   email: string;
   username: string;
+  bio: string;
+  avatar: string;
 }
 
 interface AppContextType {
@@ -13,6 +15,7 @@ interface AppContextType {
   signedUp: boolean;
   currentUser: UserAccount | null;
   signUp: (account: UserAccount) => void;
+  updateProfile: (updates: Partial<UserAccount>) => void;
   activeTab: string;
   setActiveTab: (t: string) => void;
   feedTab: string;
@@ -76,11 +79,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const updateProfile = useCallback((updates: Partial<UserAccount>) => {
+    setCurrentUser(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...updates };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('nightscroll_user', JSON.stringify(updated));
+      }
+      return updated;
+    });
+  }, []);
+
   return (
     <AppContext.Provider value={{
       ageVerified, setAgeVerified: handleSetAgeVerified,
       signedUp: currentUser !== null,
-      currentUser, signUp,
+      currentUser, signUp, updateProfile,
       activeTab, setActiveTab,
       feedTab, setFeedTab,
       commentsOpen, setCommentsOpen,
