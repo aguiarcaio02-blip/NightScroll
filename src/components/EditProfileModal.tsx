@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { X, Check, Camera } from 'lucide-react';
+import { X, Check, Camera, User } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
+import ImageCropper from './ImageCropper';
 
 interface Props {
   open: boolean;
@@ -14,6 +15,7 @@ export default function EditProfileModal({ open, onClose }: Props) {
   const [bio, setBio] = useState(currentUser?.bio || '');
   const [avatarPreview, setAvatarPreview] = useState(currentUser?.avatar || '');
   const [saved, setSaved] = useState(false);
+  const [rawImage, setRawImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!open) return null;
@@ -21,33 +23,25 @@ export default function EditProfileModal({ open, onClose }: Props) {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (!file.type.startsWith('image/')) return;
 
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const result = ev.target?.result as string;
-      // Resize to keep localStorage small
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const size = 200;
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        // Crop to square from center
-        const min = Math.min(img.width, img.height);
-        const sx = (img.width - min) / 2;
-        const sy = (img.height - min) / 2;
-        ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
-
-        setAvatarPreview(canvas.toDataURL('image/jpeg', 0.7));
-      };
-      img.src = result;
+      setRawImage(ev.target?.result as string);
     };
     reader.readAsDataURL(file);
+
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+  };
+
+  const handleCropDone = (croppedDataUrl: string) => {
+    setAvatarPreview(croppedDataUrl);
+    setRawImage(null);
+  };
+
+  const handleCropCancel = () => {
+    setRawImage(null);
   };
 
   const handleSave = () => {
@@ -60,6 +54,11 @@ export default function EditProfileModal({ open, onClose }: Props) {
   };
 
   const hasImage = avatarPreview.startsWith('data:');
+
+  // Show cropper when a raw image is selected
+  if (rawImage) {
+    return <ImageCropper imageSrc={rawImage} onCrop={handleCropDone} onCancel={handleCropCancel} />;
+  }
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center" onClick={onClose}>
@@ -100,7 +99,7 @@ export default function EditProfileModal({ open, onClose }: Props) {
                   {hasImage ? (
                     <img src={avatarPreview} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-[44px]">{avatarPreview || '😎'}</span>
+                    <User size={44} className="text-text-muted" />
                   )}
                 </div>
                 {/* Camera overlay */}
@@ -132,7 +131,7 @@ export default function EditProfileModal({ open, onClose }: Props) {
                 aria-label="Upload profile picture"
               />
 
-              <p className="text-[11px] text-text-faint text-center">JPG, PNG, or GIF. Will be cropped to a circle.</p>
+              <p className="text-[11px] text-text-faint text-center">JPG, PNG, or GIF. You can adjust the crop after selecting.</p>
             </div>
           </div>
 
