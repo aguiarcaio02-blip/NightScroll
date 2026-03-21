@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Heart, MessageCircle, Bookmark, Share2, DollarSign, MoreHorizontal, Plus, User, Trash2, Flag, EyeOff, X } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, Share2, DollarSign, MoreHorizontal, Plus, User, Trash2, Flag, EyeOff } from 'lucide-react';
 import { Video, getCreator, formatCount } from '@/lib/mock-data';
 import { useApp } from '@/lib/AppContext';
+import { toggleLike, hasUserLiked } from '@/lib/supabase-posts';
 
 interface Props {
   video: Video;
@@ -12,18 +13,31 @@ interface Props {
 
 export default function ActionSidebar({ video, onProfileClick }: Props) {
   const creator = getCreator(video.creatorId);
-  const { setCommentsOpen, setShareOpen, openTip, currentUser, deletePost, myPosts, allPosts } = useApp();
+  const { setCommentsOpen, setShareOpen, openTip, currentUser, deletePost, myPosts, allPosts, setCurrentVideoId } = useApp();
   const supabasePost = allPosts.find(p => p.id === video.id);
   const avatarSrc = creator?.avatar || supabasePost?.avatar || currentUser?.avatar || '';
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [likeCount, setLikeCount] = useState(video.likes);
+  const [commentCount, setCommentCount] = useState(video.comments);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [liking, setLiking] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Check if this is the current user's video
   const isOwnVideo = myPosts.some(p => p.id === video.id);
+
+  // Check if user already liked this post on mount
+  useEffect(() => {
+    if (!currentUser || !supabasePost) return;
+    hasUserLiked(video.id, currentUser.username).then(setLiked).catch(() => {});
+  }, [video.id, currentUser, supabasePost]);
+
+  // Sync counts when video data changes
+  useEffect(() => {
+    setLikeCount(video.likes);
+    setCommentCount(video.comments);
+  }, [video.likes, video.comments]);
 
   // Close menu on outside click
   useEffect(() => {
@@ -38,15 +52,37 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  const handleLike = () => {
-    setLiked(!liked);
-    setLikeCount(prev => liked ? prev - 1 : prev + 1);
+  const handleLike = async () => {
+    if (!currentUser || !supabasePost || liking) return;
+    setLiking(true);
+
+    // Optimistic update
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikeCount(prev => wasLiked ? prev - 1 : prev + 1);
+
+    try {
+      const result = await toggleLike(video.id, currentUser.username);
+      setLiked(result.liked);
+      setLikeCount(result.count);
+    } catch {
+      // Revert on error
+      setLiked(wasLiked);
+      setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
+    } finally {
+      setLiking(false);
+    }
   };
 
   const handleDelete = () => {
     deletePost(video.id);
     setMenuOpen(false);
     setConfirmDelete(false);
+  };
+
+  const handleOpenComments = () => {
+    setCurrentVideoId(video.id);
+    setCommentsOpen(true);
   };
 
   const actions = [
@@ -58,8 +94,8 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
     },
     {
       icon: <MessageCircle size={28} color="white" strokeWidth={2} />,
-      label: formatCount(video.comments),
-      onClick: () => setCommentsOpen(true),
+      label: formatCount(commentCount),
+      onClick: handleOpenComments,
       ariaLabel: 'View comments',
     },
     {
@@ -132,7 +168,6 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
           <MoreHorizontal size={20} color="white" strokeWidth={2} />
         </button>
 
-        {/* Dropdown menu */}
         {menuOpen && (
           <div
             className="absolute bottom-[48px] right-0 w-[180px] rounded-[12px] overflow-hidden shadow-lg z-50"

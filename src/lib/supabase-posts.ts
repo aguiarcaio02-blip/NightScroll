@@ -105,6 +105,122 @@ export async function fetchUserPosts(username: string): Promise<SupabasePost[]> 
   return data || [];
 }
 
+// --- LIKES ---
+
+export interface SupabaseLike {
+  id: string;
+  post_id: string;
+  username: string;
+  created_at: string;
+}
+
+// Toggle like: if already liked, remove it; otherwise add it
+export async function toggleLike(postId: string, username: string): Promise<{ liked: boolean; count: number }> {
+  // Check if already liked
+  const { data: existing } = await supabase
+    .from('likes')
+    .select('id')
+    .eq('post_id', postId)
+    .eq('username', username)
+    .maybeSingle();
+
+  if (existing) {
+    // Unlike
+    await supabase.from('likes').delete().eq('id', existing.id);
+  } else {
+    // Like
+    await supabase.from('likes').insert({ post_id: postId, username });
+  }
+
+  // Get updated count
+  const { count } = await supabase
+    .from('likes')
+    .select('*', { count: 'exact', head: true })
+    .eq('post_id', postId);
+
+  // Update the count on the posts table
+  await supabase.from('posts').update({ likes: count || 0 }).eq('id', postId);
+
+  return { liked: !existing, count: count || 0 };
+}
+
+// Check if a user has liked a post
+export async function hasUserLiked(postId: string, username: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('likes')
+    .select('id')
+    .eq('post_id', postId)
+    .eq('username', username)
+    .maybeSingle();
+  return !!data;
+}
+
+// Get like count for a post
+export async function getLikeCount(postId: string): Promise<number> {
+  const { count } = await supabase
+    .from('likes')
+    .select('*', { count: 'exact', head: true })
+    .eq('post_id', postId);
+  return count || 0;
+}
+
+// --- COMMENTS ---
+
+export interface SupabaseComment {
+  id: string;
+  post_id: string;
+  username: string;
+  avatar: string;
+  text: string;
+  created_at: string;
+}
+
+// Add a comment to a post
+export async function addComment(postId: string, username: string, avatar: string, text: string): Promise<SupabaseComment> {
+  const { data, error } = await supabase
+    .from('comments')
+    .insert({ post_id: postId, username, avatar, text })
+    .select()
+    .single();
+
+  if (error) throw new Error(`Add comment failed: ${error.message}`);
+
+  // Update comments count on the post
+  const { count } = await supabase
+    .from('comments')
+    .select('*', { count: 'exact', head: true })
+    .eq('post_id', postId);
+
+  await supabase.from('posts').update({ comments_count: count || 0 }).eq('id', postId);
+
+  return data;
+}
+
+// Fetch comments for a post
+export async function fetchComments(postId: string): Promise<SupabaseComment[]> {
+  const { data, error } = await supabase
+    .from('comments')
+    .select('*')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw new Error(`Fetch comments failed: ${error.message}`);
+  return data || [];
+}
+
+// Delete a comment
+export async function deleteComment(commentId: string, postId: string): Promise<void> {
+  await supabase.from('comments').delete().eq('id', commentId);
+
+  // Update count
+  const { count } = await supabase
+    .from('comments')
+    .select('*', { count: 'exact', head: true })
+    .eq('post_id', postId);
+
+  await supabase.from('posts').update({ comments_count: count || 0 }).eq('id', postId);
+}
+
 // Delete a post and its video/thumbnail from storage
 export async function deletePostById(postId: string): Promise<void> {
   // Delete from database
