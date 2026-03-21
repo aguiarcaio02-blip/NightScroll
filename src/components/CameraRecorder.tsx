@@ -30,8 +30,9 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: facing,
-          width: { ideal: 720 },
-          height: { ideal: 1280 },
+          aspectRatio: { ideal: 9 / 16 },
+          width: { ideal: 1080 },
+          height: { ideal: 1920 },
           zoom: { ideal: 1 },
         } as MediaTrackConstraints,
         audio: true,
@@ -146,7 +147,7 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
             autoPlay
             playsInline
             muted
-            className="absolute inset-0 w-full h-full object-contain"
+            className="absolute inset-0 w-full h-full object-cover"
             style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
           />
         )}
