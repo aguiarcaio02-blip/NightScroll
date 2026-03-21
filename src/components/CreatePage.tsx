@@ -220,7 +220,7 @@ export default function CreatePage() {
                 allowDownloads: toggles['Allow Downloads'],
                 ageRestriction: toggles['Age Restriction'],
                 username: currentUser.username,
-              });
+              }, videoBlob);
               // Reset state and go to profile
               setCaption('');
               setSelectedTags([]);

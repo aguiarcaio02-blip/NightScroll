@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, useEffect, ReactNode } from 'react';
 import { Video } from '@/lib/mock-data';
+import { saveVideoBlob, getVideoBlob, deleteVideoBlob } from '@/lib/storage';
 
 export interface UserAccount {
   email: string;
@@ -25,6 +26,9 @@ export interface UserPost {
   username: string;
 }
 
+// Metadata stored in localStorage (everything except blob URL)
+type PostMeta = Omit<UserPost, 'videoUrl'>;
+
 interface AppContextType {
   ageVerified: boolean;
   setAgeVerified: (v: boolean) => void;
@@ -47,12 +51,14 @@ interface AppContextType {
   currentVideoId: string | null;
   setCurrentVideoId: (id: string | null) => void;
   userPosts: UserPost[];
-  addPost: (post: Omit<UserPost, 'id' | 'createdAt'>) => void;
+  addPost: (post: Omit<UserPost, 'id' | 'createdAt'>, videoBlob: Blob | null) => void;
   deletePost: (id: string) => void;
   userVideos: Video[];
 }
 
 const AppContext = createContext<AppContextType | null>(null);
+
+const POSTS_KEY = 'nightscroll_posts';
 
 function loadUser(): UserAccount | null {
   if (typeof window === 'undefined') return null;
@@ -62,6 +68,23 @@ function loadUser(): UserAccount | null {
   } catch {
     return null;
   }
+}
+
+function loadPostMeta(): PostMeta[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = localStorage.getItem(POSTS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePostMeta(posts: UserPost[]) {
+  if (typeof window === 'undefined') return;
+  // Strip videoUrl (blob URLs) before saving — they're not valid across sessions
+  const metas: PostMeta[] = posts.map(({ videoUrl, ...rest }) => rest);
+  localStorage.setItem(POSTS_KEY, JSON.stringify(metas));
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -80,17 +103,69 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [tipCreatorId, setTipCreatorId] = useState<string | null>(null);
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
   const [userPosts, setUserPosts] = useState<UserPost[]>([]);
+  const [postsLoaded, setPostsLoaded] = useState(false);
 
-  const addPost = useCallback((post: Omit<UserPost, 'id' | 'createdAt'>) => {
+  // Restore posts from localStorage + IndexedDB on mount
+  useEffect(() => {
+    async function restorePosts() {
+      const metas = loadPostMeta();
+      if (metas.length === 0) {
+        setPostsLoaded(true);
+        return;
+      }
+
+      const restored: UserPost[] = [];
+      for (const meta of metas) {
+        try {
+          const blob = await getVideoBlob(meta.id);
+          restored.push({
+            ...meta,
+            videoUrl: blob ? URL.createObjectURL(blob) : '',
+          });
+        } catch {
+          // If blob retrieval fails, still show post with thumbnail
+          restored.push({ ...meta, videoUrl: '' });
+        }
+      }
+      setUserPosts(restored);
+      setPostsLoaded(true);
+    }
+    restorePosts();
+  }, []);
+
+  // Persist post metadata whenever posts change (after initial load)
+  useEffect(() => {
+    if (postsLoaded) {
+      savePostMeta(userPosts);
+    }
+  }, [userPosts, postsLoaded]);
+
+  const addPost = useCallback(async (post: Omit<UserPost, 'id' | 'createdAt'>, videoBlob: Blob | null) => {
     const newPost: UserPost = {
       ...post,
       id: `post_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       createdAt: Date.now(),
     };
+
+    // Save video blob to IndexedDB
+    if (videoBlob) {
+      try {
+        await saveVideoBlob(newPost.id, videoBlob);
+      } catch (e) {
+        console.error('Failed to save video blob:', e);
+      }
+    }
+
     setUserPosts(prev => [newPost, ...prev]);
   }, []);
 
-  const deletePost = useCallback((id: string) => {
+  const deletePost = useCallback(async (id: string) => {
+    // Remove blob from IndexedDB
+    try {
+      await deleteVideoBlob(id);
+    } catch (e) {
+      console.error('Failed to delete video blob:', e);
+    }
     setUserPosts(prev => prev.filter(p => p.id !== id));
   }, []);
 
