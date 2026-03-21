@@ -10,10 +10,10 @@ interface Props {
 
 function getSupportedMimeType(): string {
   const types = [
+    'video/mp4',
     'video/webm;codecs=vp9,opus',
     'video/webm;codecs=vp8,opus',
     'video/webm',
-    'video/mp4',
   ];
   for (const type of types) {
     if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(type)) {
@@ -27,108 +27,49 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const videoStreamRef = useRef<MediaStream | null>(null);
-  const audioStreamRef = useRef<MediaStream | null>(null);
-  const recordStreamRef = useRef<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const animFrameRef = useRef<number>(0);
 
   const [recording, setRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
   const [error, setError] = useState('');
 
-  // Draw the video element onto the canvas continuously
-  const drawToCanvas = useCallback(() => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || video.readyState < 2) {
-      animFrameRef.current = requestAnimationFrame(drawToCanvas);
-      return;
-    }
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Draw video frame to canvas (handles the flip via CSS on video, canvas gets raw feed)
-    ctx.save();
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    ctx.restore();
-
-    animFrameRef.current = requestAnimationFrame(drawToCanvas);
-  }, []);
-
-  const switchVideoStream = useCallback(async (facing: 'user' | 'environment') => {
-    // Stop existing video tracks only
-    if (videoStreamRef.current) {
-      videoStreamRef.current.getTracks().forEach(t => t.stop());
+  const startCamera = useCallback(async (facing: 'user' | 'environment') => {
+    // Stop existing stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
     }
 
     try {
-      // Probe native capabilities
-      let targetWidth = 720;
-      let targetHeight = 1280;
-
-      try {
-        const probeStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: facing },
-          audio: false,
-        });
-        const probeTrack = probeStream.getVideoTracks()[0];
-        const caps = probeTrack.getCapabilities?.() as Record<string, unknown> | undefined;
-        const settings = probeTrack.getSettings();
-        const nativeW = (caps?.width as { max?: number })?.max || settings.width || 640;
-        const nativeH = (caps?.height as { max?: number })?.max || settings.height || 480;
-        probeStream.getTracks().forEach(t => t.stop());
-
-        const maxDim = Math.max(nativeW, nativeH);
-        const minDim = Math.min(nativeW, nativeH);
-        targetWidth = minDim;
-        targetHeight = Math.round(minDim * 16 / 9);
-        if (targetHeight > maxDim) {
-          targetHeight = maxDim;
-          targetWidth = Math.round(maxDim * 9 / 16);
-        }
-      } catch {
-        // Probe failed, use defaults
-      }
-
-      // Get video-only stream
-      const videoStream = await navigator.mediaDevices.getUserMedia({
+      // Request camera with high quality but let the browser pick native resolution
+      // Don't force aspect ratio — let object-cover handle framing
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: facing,
-          width: { ideal: targetWidth, max: targetWidth },
-          height: { ideal: targetHeight, max: targetHeight },
-          aspectRatio: { ideal: 9 / 16 },
+          facingMode: { ideal: facing },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
         },
-        audio: false,
+        audio: true,
       });
 
-      // Set zoom to minimum
-      const videoTrack = videoStream.getVideoTracks()[0];
-      const realCaps = videoTrack.getCapabilities?.() as Record<string, unknown> | undefined;
-      if (realCaps?.zoom) {
-        const zoomRange = realCaps.zoom as { min: number };
-        try {
+      // Set zoom to minimum to prevent digital zoom on front camera
+      const videoTrack = stream.getVideoTracks()[0];
+      try {
+        const caps = videoTrack.getCapabilities?.() as Record<string, unknown> | undefined;
+        if (caps?.zoom) {
+          const zoomRange = caps.zoom as { min: number };
           await videoTrack.applyConstraints({
             advanced: [{ zoom: zoomRange.min } as MediaTrackConstraintSet],
           });
-        } catch { /* */ }
-      }
+        }
+      } catch { /* zoom not supported */ }
 
-      videoStreamRef.current = videoStream;
+      streamRef.current = stream;
 
-      // Feed to video element for preview
       if (videoRef.current) {
-        videoRef.current.srcObject = videoStream;
-      }
-
-      // Set canvas size to match
-      if (canvasRef.current) {
-        const s = videoTrack.getSettings();
-        canvasRef.current.width = s.width || targetWidth;
-        canvasRef.current.height = s.height || targetHeight;
+        videoRef.current.srcObject = stream;
       }
 
       setError('');
@@ -137,22 +78,13 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
     }
   }, []);
 
-  // Initialize: get audio once, get video, start canvas draw loop
+  // Initialize camera
   useEffect(() => {
     let mounted = true;
 
     const init = async () => {
-      // Get audio stream (keep for entire session)
-      try {
-        const audio = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        if (mounted) audioStreamRef.current = audio;
-      } catch {
-        // No audio, continue without
-      }
-
       if (mounted) {
-        await switchVideoStream(facingMode);
-        animFrameRef.current = requestAnimationFrame(drawToCanvas);
+        await startCamera(facingMode);
       }
     };
 
@@ -160,9 +92,7 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
 
     return () => {
       mounted = false;
-      cancelAnimationFrame(animFrameRef.current);
-      videoStreamRef.current?.getTracks().forEach(t => t.stop());
-      audioStreamRef.current?.getTracks().forEach(t => t.stop());
+      streamRef.current?.getTracks().forEach(t => t.stop());
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
@@ -170,55 +100,52 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
   const handleFlip = async () => {
     const newFacing = facingMode === 'user' ? 'environment' : 'user';
     setFacingMode(newFacing);
-    // Just switch the video preview — the canvas-based recorder keeps running
-    await switchVideoStream(newFacing);
+
+    if (recording) {
+      // During recording: stop current recorder, save chunks, switch camera, start new recorder
+      const mr = mediaRecorderRef.current;
+      if (mr && mr.state !== 'inactive') {
+        // Request any pending data
+        mr.requestData();
+        mr.stop();
+      }
+
+      await startCamera(newFacing);
+
+      // Start a new recorder on the new stream
+      if (streamRef.current) {
+        startRecorderOnStream(streamRef.current);
+      }
+    } else {
+      await startCamera(newFacing);
+    }
   };
 
-  const startRecording = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // Create a stream from the canvas
-    const canvasStream = canvas.captureStream(30);
-
-    // Add audio track if available
-    if (audioStreamRef.current) {
-      const audioTrack = audioStreamRef.current.getAudioTracks()[0];
-      if (audioTrack) {
-        canvasStream.addTrack(audioTrack);
-      }
-    }
-
-    recordStreamRef.current = canvasStream;
-    chunksRef.current = [];
-
+  const startRecorderOnStream = (stream: MediaStream) => {
     const mimeType = getSupportedMimeType();
     const options: MediaRecorderOptions = {};
     if (mimeType) options.mimeType = mimeType;
 
-    const mr = new MediaRecorder(canvasStream, options);
+    // Request higher bitrate for better quality
+    options.videoBitsPerSecond = 5000000; // 5 Mbps
+
+    const mr = new MediaRecorder(stream, options);
     mr.ondataavailable = (e) => {
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
     mr.onstop = () => {
-      const mType = getSupportedMimeType() || 'video/webm';
-      const blob = new Blob(chunksRef.current, { type: mType });
-
-      // Generate thumbnail from the last canvas frame
-      let thumbnailUrl = '';
-      if (canvasRef.current) {
-        thumbnailUrl = canvasRef.current.toDataURL('image/jpeg', 0.6);
-      }
-
-      // Stop camera streams
-      videoStreamRef.current?.getTracks().forEach(t => t.stop());
-      audioStreamRef.current?.getTracks().forEach(t => t.stop());
-      cancelAnimationFrame(animFrameRef.current);
-
-      onRecorded(blob, thumbnailUrl);
+      // Only finalize if we're actually stopping (not flipping)
     };
-    mr.start(1000); // Collect data every second
+    mr.start(500);
     mediaRecorderRef.current = mr;
+  };
+
+  const startRecording = () => {
+    if (!streamRef.current) return;
+
+    chunksRef.current = [];
+    startRecorderOnStream(streamRef.current);
+
     setRecording(true);
     setElapsed(0);
 
@@ -229,7 +156,33 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && recording) {
-      mediaRecorderRef.current.stop();
+      const mr = mediaRecorderRef.current;
+
+      mr.onstop = () => {
+        const mType = getSupportedMimeType() || 'video/webm';
+        const blob = new Blob(chunksRef.current, { type: mType });
+
+        // Generate thumbnail from the video element
+        let thumbnailUrl = '';
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        if (video && canvas) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
+          }
+        }
+
+        // Stop camera
+        streamRef.current?.getTracks().forEach(t => t.stop());
+
+        onRecorded(blob, thumbnailUrl);
+      };
+
+      mr.stop();
       setRecording(false);
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -243,9 +196,7 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
       mediaRecorderRef.current.onstop = null;
       mediaRecorderRef.current.stop();
     }
-    videoStreamRef.current?.getTracks().forEach(t => t.stop());
-    audioStreamRef.current?.getTracks().forEach(t => t.stop());
-    cancelAnimationFrame(animFrameRef.current);
+    streamRef.current?.getTracks().forEach(t => t.stop());
     if (timerRef.current) clearInterval(timerRef.current);
     onCancel();
   };
@@ -258,7 +209,7 @@ export default function CameraRecorder({ onRecorded, onCancel }: Props) {
 
   return (
     <div className="fixed inset-0 z-[70] bg-black flex flex-col">
-      {/* Hidden canvas for recording */}
+      {/* Hidden canvas for thumbnail generation */}
       <canvas ref={canvasRef} className="hidden" />
 
       {/* Camera feed */}
