@@ -8,7 +8,7 @@ interface CookiePageProps {
 
 export default function CookiePage({ onBack }: CookiePageProps) {
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white">
+    <div className="h-full overflow-y-auto bg-[#0A0A0A] text-white">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[#0A0A0A]/95 backdrop-blur-sm border-b border-white/10">
         <div className="flex items-center gap-md px-lg py-md h-[44px]">
