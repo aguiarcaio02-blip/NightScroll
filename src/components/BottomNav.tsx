@@ -12,7 +12,16 @@ const tabs = [
 ];
 
 export default function BottomNav({ isFeed }: { isFeed?: boolean }) {
-  const { activeTab, setActiveTab } = useApp();
+  const { activeTab, setActiveTab, unreadNotifCount, refreshNotifCount } = useApp();
+
+  const handleTabClick = (tabId: string) => {
+    setActiveTab(tabId);
+    // Reset unread count when opening inbox
+    if (tabId === 'inbox') {
+      // Count will reset after InboxPage marks them as read and refreshes
+      setTimeout(() => refreshNotifCount(), 1000);
+    }
+  };
 
   return (
     <nav
@@ -32,7 +41,7 @@ export default function BottomNav({ isFeed }: { isFeed?: boolean }) {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabClick(tab.id)}
               className="flex flex-col items-center justify-center min-w-[44px] min-h-[44px]"
               aria-label="Create new content"
             >
@@ -49,16 +58,25 @@ export default function BottomNav({ isFeed }: { isFeed?: boolean }) {
         return (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className="flex flex-col items-center justify-center gap-[2px] min-w-[44px] min-h-[44px]"
+            onClick={() => handleTabClick(tab.id)}
+            className="flex flex-col items-center justify-center gap-[2px] min-w-[44px] min-h-[44px] relative"
             aria-label={tab.label}
           >
-            <Icon
-              size={22}
-              color={active ? '#FFFFFF' : '#888888'}
-              fill={active && tab.id === 'home' ? '#FFFFFF' : 'none'}
-              strokeWidth={active ? 2.5 : 2}
-            />
+            <div className="relative">
+              <Icon
+                size={22}
+                color={active ? '#FFFFFF' : '#888888'}
+                fill={active && tab.id === 'home' ? '#FFFFFF' : 'none'}
+                strokeWidth={active ? 2.5 : 2}
+              />
+              {tab.id === 'inbox' && unreadNotifCount > 0 && (
+                <span className="absolute -top-[6px] -right-[10px] min-w-[16px] h-[16px] px-[4px] rounded-full bg-[#EF4444] flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-white leading-none">
+                    {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                  </span>
+                </span>
+              )}
+            </div>
             <span
               className="text-[10px]"
               style={{

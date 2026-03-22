@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, ReactNode } from 'react';
 import { Video } from '@/lib/mock-data';
-import { uploadVideo, uploadThumbnail, createPost, fetchPosts, fetchUserPosts, deletePostById, SupabasePost } from '@/lib/supabase-posts';
+import { uploadVideo, uploadThumbnail, createPost, fetchPosts, fetchUserPosts, deletePostById, SupabasePost, fetchNotifications } from '@/lib/supabase-posts';
 import { supabase } from '@/lib/supabase';
 
 export interface UserAccount {
@@ -51,6 +51,8 @@ interface AppContextType {
   posting: boolean;
   feedVideos: Video[];
   myVideos: Video[];
+  unreadNotifCount: number;
+  refreshNotifCount: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -101,6 +103,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
   const [allPosts, setAllPosts] = useState<SupabasePost[]>([]);
   const [posting, setPosting] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+
+  // Fetch unread notification count
+  const refreshNotifCount = useCallback(async () => {
+    if (!currentUser) return;
+    try {
+      const notifs = await fetchNotifications(currentUser.username);
+      setUnreadNotifCount(notifs.filter(n => !n.read).length);
+    } catch {
+      // ignore
+    }
+  }, [currentUser]);
+
+  // Fetch notification count on mount and periodically
+  useEffect(() => {
+    if (!currentUser) return;
+    refreshNotifCount();
+
+    // Poll every 30 seconds for new notifications
+    const interval = setInterval(refreshNotifCount, 30000);
+
+    // Also subscribe to real-time notification inserts
+    const channel = supabase
+      .channel('notif-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `recipient_username=eq.${currentUser.username}` },
+        () => {
+          setUnreadNotifCount(prev => prev + 1);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser, refreshNotifCount]);
 
   // Fetch all posts on mount + subscribe to real-time updates
   useEffect(() => {
@@ -272,6 +312,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       currentVideoId, setCurrentVideoId,
       allPosts, myPosts, addPost, deletePost, refreshPosts, updatePostCounts, posting,
       feedVideos, myVideos,
+      unreadNotifCount, refreshNotifCount,
     }}>
       {children}
     </AppContext.Provider>

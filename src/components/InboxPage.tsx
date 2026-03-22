@@ -47,7 +47,7 @@ function groupByTime(items: SupabaseNotification[]) {
 }
 
 export default function InboxPage() {
-  const { setActiveTab, currentUser } = useApp();
+  const { setActiveTab, currentUser, refreshNotifCount } = useApp();
   const [notifications, setNotifications] = useState<SupabaseNotification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,8 +58,10 @@ export default function InboxPage() {
     fetchNotifications(currentUser.username)
       .then(data => {
         setNotifications(data);
-        // Mark all as read after viewing
-        markNotificationsRead(currentUser.username).catch(() => {});
+        // Mark all as read after viewing and update badge
+        markNotificationsRead(currentUser.username)
+          .then(() => refreshNotifCount())
+          .catch(() => {});
       })
       .catch(e => console.error('Failed to fetch notifications:', e))
       .finally(() => setLoading(false));
