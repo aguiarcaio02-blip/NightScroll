@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, BadgeCheck, Crown, Send, Grid3X3, Lock, Heart, Play, DollarSign, Share2, Settings, User, X } from 'lucide-react';
 import { Creator, Video, formatCount } from '@/lib/mock-data';
 import { useApp } from '@/lib/AppContext';
+import { fetchLikedPostIds } from '@/lib/supabase-posts';
 import EditProfileModal from './EditProfileModal';
 import VideoCard from './VideoCard';
 
@@ -25,7 +26,17 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [likedPostIds, setLikedPostIds] = useState<string[]>([]);
   const { openTip, setActiveTab: setAppTab, currentUser, myVideos, feedVideos } = useApp();
+
+  // Fetch liked post IDs for own profile
+  useEffect(() => {
+    if (isOwn && currentUser) {
+      fetchLikedPostIds(currentUser.username)
+        .then(setLikedPostIds)
+        .catch(() => {});
+    }
+  }, [isOwn, currentUser]);
 
   // Use current user data for own profile
   const displayAvatar = isOwn && currentUser?.avatar ? currentUser.avatar : creator.avatar;
@@ -36,7 +47,13 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
     ? myVideos
     : feedVideos.filter(v => v.creatorId === creator.username);
   const premiumVideos = creatorVideos.filter(v => v.isPremium);
-  const displayVideos = activeTab === 'premium' ? premiumVideos : creatorVideos;
+  const likedVideos = feedVideos.filter(v => likedPostIds.includes(v.id));
+
+  const displayVideos = activeTab === 'premium'
+    ? premiumVideos
+    : activeTab === 'liked'
+    ? likedVideos
+    : creatorVideos;
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar bg-bg-primary">
@@ -230,9 +247,17 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
           ))
         ) : (
           <div className="col-span-3 py-3xl text-center">
-            <Lock size={32} className="text-text-faint mx-auto mb-md" />
+            {activeTab === 'liked' ? (
+              <Heart size={32} className="text-text-faint mx-auto mb-md" />
+            ) : (
+              <Lock size={32} className="text-text-faint mx-auto mb-md" />
+            )}
             <p className="text-text-muted text-[14px]">
-              {activeTab === 'premium' ? 'Subscribe to unlock premium content' : 'No content yet'}
+              {activeTab === 'premium'
+                ? 'No premium content yet'
+                : activeTab === 'liked'
+                ? 'No liked videos yet'
+                : 'No content yet'}
             </p>
           </div>
         )}

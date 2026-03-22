@@ -159,6 +159,16 @@ export async function toggleLike(postId: string, username: string, actorAvatar?:
   return { liked: !existing, count: count || 0 };
 }
 
+// Fetch all post IDs liked by a user
+export async function fetchLikedPostIds(username: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('likes')
+    .select('post_id')
+    .eq('username', username);
+  if (error) return [];
+  return (data || []).map(d => d.post_id);
+}
+
 // Check if a user has liked a post
 export async function hasUserLiked(postId: string, username: string): Promise<boolean> {
   const { data } = await supabase
