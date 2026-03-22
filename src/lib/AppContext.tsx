@@ -94,7 +94,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return false;
   });
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(loadUser);
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTabState] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('nightscroll_tab') || 'home';
+    }
+    return 'home';
+  });
+  const setActiveTab = useCallback((tab: string) => {
+    setActiveTabState(tab);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('nightscroll_tab', tab);
+    }
+  }, []);
   const [feedTab, setFeedTab] = useState('foryou');
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
