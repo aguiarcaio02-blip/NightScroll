@@ -115,7 +115,7 @@ export interface SupabaseLike {
 }
 
 // Toggle like: if already liked, remove it; otherwise add it
-export async function toggleLike(postId: string, username: string): Promise<{ liked: boolean; count: number }> {
+export async function toggleLike(postId: string, username: string, actorAvatar?: string): Promise<{ liked: boolean; count: number }> {
   // Check if already liked
   const { data: existing } = await supabase
     .from('likes')
@@ -140,6 +140,21 @@ export async function toggleLike(postId: string, username: string): Promise<{ li
 
   // Update the count on the posts table
   await supabase.from('posts').update({ likes: count || 0 }).eq('id', postId);
+
+  // Send notification on like (not unlike)
+  if (!existing) {
+    const { data: post } = await supabase.from('posts').select('username').eq('id', postId).single();
+    if (post && post.username !== username) {
+      await supabase.from('notifications').insert({
+        recipient_username: post.username,
+        actor_username: username,
+        actor_avatar: actorAvatar || '',
+        type: 'like',
+        post_id: postId,
+        text: 'liked your video',
+      });
+    }
+  }
 
   return { liked: !existing, count: count || 0 };
 }
@@ -193,6 +208,19 @@ export async function addComment(postId: string, username: string, avatar: strin
 
   const totalCount = count || 0;
   await supabase.from('posts').update({ comments_count: totalCount }).eq('id', postId);
+
+  // Send notification to post owner
+  const { data: post } = await supabase.from('posts').select('username').eq('id', postId).single();
+  if (post && post.username !== username) {
+    await supabase.from('notifications').insert({
+      recipient_username: post.username,
+      actor_username: username,
+      actor_avatar: avatar,
+      type: 'comment',
+      post_id: postId,
+      text: `commented: "${text.slice(0, 50)}"`,
+    });
+  }
 
   return { comment: data, totalCount };
 }

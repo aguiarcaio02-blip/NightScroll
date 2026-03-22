@@ -3,7 +3,7 @@
 import { X, Heart, Send, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useApp } from '@/lib/AppContext';
-import { fetchComments, addComment, sendNotification, SupabaseComment } from '@/lib/supabase-posts';
+import { fetchComments, addComment, SupabaseComment } from '@/lib/supabase-posts';
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
@@ -63,22 +63,6 @@ export default function CommentsDrawer() {
       setComments(prev => [...prev, comment]);
       setNewComment('');
       updatePostCounts(videoId, post?.likes ?? 0, totalCount);
-
-      // Send notification to post owner
-      if (post && post.username !== username) {
-        try {
-          await sendNotification({
-            recipientUsername: post.username,
-            actorUsername: username,
-            actorAvatar: avatar,
-            type: 'comment',
-            postId: videoId,
-            text: `commented: "${commentText.slice(0, 50)}"`,
-          });
-        } catch (notifErr) {
-          console.error('Notification failed:', notifErr);
-        }
-      }
     } catch (e) {
       console.error('Failed to send comment:', e);
     } finally {

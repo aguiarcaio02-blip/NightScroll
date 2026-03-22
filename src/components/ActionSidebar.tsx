@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, Bookmark, Share2, DollarSign, MoreHorizontal, Plus, User, Trash2, Flag, EyeOff } from 'lucide-react';
 import { Video, getCreator, formatCount } from '@/lib/mock-data';
 import { useApp } from '@/lib/AppContext';
-import { toggleLike, hasUserLiked, sendNotification } from '@/lib/supabase-posts';
+import { toggleLike, hasUserLiked } from '@/lib/supabase-posts';
 
 interface Props {
   video: Video;
@@ -56,25 +56,9 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
     setLiked(!wasLiked);
 
     try {
-      const result = await toggleLike(video.id, currentUser.username);
+      const result = await toggleLike(video.id, currentUser.username, currentUser.avatar || '');
       setLiked(result.liked);
       updatePostCounts(video.id, result.count, commentCount);
-
-      // Send notification to post owner on like (not unlike)
-      if (result.liked && supabasePost && supabasePost.username !== currentUser.username) {
-        try {
-          await sendNotification({
-            recipientUsername: supabasePost.username,
-            actorUsername: currentUser.username,
-            actorAvatar: currentUser.avatar || '',
-            type: 'like',
-            postId: video.id,
-            text: 'liked your video',
-          });
-        } catch (notifErr) {
-          console.error('Like notification failed:', notifErr);
-        }
-      }
     } catch {
       setLiked(wasLiked);
     } finally {
