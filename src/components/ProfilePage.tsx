@@ -116,21 +116,12 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
 
         {/* Action buttons */}
         {isOwn ? (
-          <div className="flex items-center gap-sm">
-            <button
-              onClick={() => setEditOpen(true)}
-              className="px-xl py-sm rounded-full bg-bg-tertiary border border-border-default text-[14px] text-white font-semibold min-h-[40px]"
-            >
-              Edit Profile
-            </button>
-            <button className="px-xl py-sm rounded-full bg-bg-tertiary border border-border-default text-[14px] text-white font-semibold flex items-center gap-sm min-h-[40px]">
-              <DollarSign size={14} />
-              $1,234
-            </button>
-            <button className="w-[40px] h-[40px] rounded-full bg-bg-tertiary border border-border-default flex items-center justify-center" aria-label="Share profile">
-              <Share2 size={16} color="white" />
-            </button>
-          </div>
+          <button
+            onClick={() => setEditOpen(true)}
+            className="px-xl py-sm rounded-full bg-bg-tertiary border border-border-default text-[14px] text-white font-semibold min-h-[40px]"
+          >
+            Edit Profile
+          </button>
         ) : (
           <div className="flex items-center gap-sm">
             <button
