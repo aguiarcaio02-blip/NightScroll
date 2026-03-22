@@ -159,6 +159,62 @@ export async function toggleLike(postId: string, username: string, actorAvatar?:
   return { liked: !existing, count: count || 0 };
 }
 
+// Search posts by username or tags
+export async function searchPosts(query: string): Promise<SupabasePost[]> {
+  const q = query.toLowerCase().trim();
+  if (!q) return [];
+
+  // Search by username (ilike) or caption (ilike)
+  const { data, error } = await supabase
+    .from('posts')
+    .select('*')
+    .or(`username.ilike.%${q}%,caption.ilike.%${q}%`)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (error) return [];
+  return data || [];
+}
+
+// Get unique creators from posts
+export async function fetchCreators(): Promise<{ username: string; avatar: string; postCount: number }[]> {
+  const { data, error } = await supabase
+    .from('posts')
+    .select('username, avatar');
+
+  if (error || !data) return [];
+
+  const creatorMap = new Map<string, { username: string; avatar: string; postCount: number }>();
+  for (const post of data) {
+    const existing = creatorMap.get(post.username);
+    if (existing) {
+      existing.postCount++;
+    } else {
+      creatorMap.set(post.username, { username: post.username, avatar: post.avatar, postCount: 1 });
+    }
+  }
+  return Array.from(creatorMap.values());
+}
+
+// Get all unique tags from posts
+export async function fetchTags(): Promise<{ tag: string; count: number }[]> {
+  const { data, error } = await supabase
+    .from('posts')
+    .select('tags');
+
+  if (error || !data) return [];
+
+  const tagMap = new Map<string, number>();
+  for (const post of data) {
+    for (const tag of post.tags || []) {
+      tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
+    }
+  }
+  return Array.from(tagMap.entries())
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
 // Increment view count for a post
 export async function incrementView(postId: string): Promise<void> {
   const { data: post } = await supabase

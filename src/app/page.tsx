@@ -19,7 +19,7 @@ import TipOverlay from '@/components/TipOverlay';
 import PullToRefresh from '@/components/PullToRefresh';
 
 function AppContent() {
-  const { ageVerified, signedUp, currentUser, activeTab, setActiveTab } = useApp();
+  const { ageVerified, signedUp, currentUser, activeTab, setActiveTab, allPosts } = useApp();
   const [viewingProfile, setViewingProfile] = useState<string | null>(null);
 
   if (!ageVerified) {
@@ -38,14 +38,30 @@ function AppContent() {
     setViewingProfile(null);
   };
 
-  // If viewing someone's profile
+  // If viewing someone's profile (by username)
   if (viewingProfile) {
-    const creator = creators.find(c => c.id === viewingProfile);
-    if (creator) {
+    // Build a Creator object from Supabase post data
+    const postByUser = allPosts.find(p => p.username === viewingProfile);
+    const profileCreator = postByUser ? {
+      id: viewingProfile,
+      username: viewingProfile,
+      displayName: viewingProfile,
+      avatar: postByUser.avatar || '',
+      bio: '',
+      verified: false,
+      online: false,
+      followers: 0,
+      following: 0,
+      likes: 0,
+      subscriptionPrice: null as number | null,
+      tiers: [] as { name: string; price: number; color: string; perks: string[] }[],
+    } : null;
+
+    if (profileCreator) {
       return (
         <div className="h-full">
           <div className="lg:ml-[240px] h-full">
-            <ProfilePage creator={creator} onBack={handleBackFromProfile} />
+            <ProfilePage creator={profileCreator} onBack={handleBackFromProfile} />
           </div>
           <Sidebar />
           <BottomNav />
