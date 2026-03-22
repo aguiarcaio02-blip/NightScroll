@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Shield } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 
@@ -11,6 +11,8 @@ export default function AgeGate() {
   const [year, setYear] = useState('');
   const [error, setError] = useState('');
   const [fading, setFading] = useState(false);
+  const dayRef = useRef<HTMLInputElement>(null);
+  const yearRef = useRef<HTMLInputElement>(null);
 
   const handleVerify = () => {
     setError('');
@@ -72,21 +74,31 @@ export default function AgeGate() {
             maxLength={2}
             placeholder="MM"
             value={month}
-            onChange={(e) => setMonth(e.target.value.replace(/\D/g, ''))}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, '');
+              setMonth(val);
+              if (val.length === 2) dayRef.current?.focus();
+            }}
             className={`${inputClass} flex-1`}
             aria-label="Month"
           />
           <input
+            ref={dayRef}
             type="text"
             inputMode="numeric"
             maxLength={2}
             placeholder="DD"
             value={day}
-            onChange={(e) => setDay(e.target.value.replace(/\D/g, ''))}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, '');
+              setDay(val);
+              if (val.length === 2) yearRef.current?.focus();
+            }}
             className={`${inputClass} flex-1`}
             aria-label="Day"
           />
           <input
+            ref={yearRef}
             type="text"
             inputMode="numeric"
             maxLength={4}
