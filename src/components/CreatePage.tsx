@@ -68,20 +68,7 @@ export default function CreatePage() {
       </div>
 
       {step === 1 ? (
-        <div className="flex flex-col items-center px-xl pt-3xl pb-[80px]">
-          {/* Upload zone */}
-          <div
-            className="w-full max-w-[340px] aspect-[9/16] rounded-[12px] border-2 border-dashed border-border-default bg-bg-secondary flex flex-col items-center justify-center cursor-pointer hover:border-accent-primary hover:bg-bg-tertiary transition-all mb-2xl"
-          >
-            <div className="w-[64px] h-[64px] rounded-full flex items-center justify-center mb-lg" style={{ background: 'linear-gradient(135deg, #D946EF, #A855F7)' }}>
-              <Upload size={28} color="white" />
-            </div>
-            <p className="text-[15px] font-bold text-white mb-xs">Upload a video</p>
-            <p className="text-[12px] text-text-muted mb-xs">MP4 or MOV up to 500MB</p>
-            <p className="text-[11px] text-text-faint">Drag & drop or click to browse</p>
-          </div>
-
-          {/* Record / Gallery buttons */}
+        <div className="flex flex-col items-center justify-center px-xl pb-[80px]" style={{ minHeight: 'calc(100vh - 160px)' }}>
           <div className="flex gap-md w-full max-w-[340px]">
             <button
               onClick={() => setShowCamera(true)}
