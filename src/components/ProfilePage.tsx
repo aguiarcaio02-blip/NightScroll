@@ -80,7 +80,11 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
           <ChevronLeft size={24} color="white" />
         </button>
         <span className="text-[15px] font-bold text-white">@{creator.username}</span>
-        <button className="w-[44px] h-[44px] flex items-center justify-center" aria-label="Settings">
+        <button
+          onClick={() => isOwn && setAppTab('settings')}
+          className="w-[44px] h-[44px] flex items-center justify-center"
+          aria-label="Settings"
+        >
           <Settings size={20} color="white" />
         </button>
       </div>
