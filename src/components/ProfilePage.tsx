@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChevronLeft, BadgeCheck, Crown, Send, Grid3X3, Lock, Heart, Play, DollarSign, Share2, Settings, User, X } from 'lucide-react';
+import { ChevronLeft, BadgeCheck, Crown, Send, Grid3X3, Lock, Heart, Play, DollarSign, Settings, User, X } from 'lucide-react';
 import { Creator, Video, formatCount } from '@/lib/mock-data';
 import { useApp } from '@/lib/AppContext';
 import { fetchLikedPostIds } from '@/lib/supabase-posts';
@@ -63,8 +63,8 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
           <ChevronLeft size={24} color="white" />
         </button>
         <span className="text-[15px] font-bold text-white">@{creator.username}</span>
-        <button className="w-[44px] h-[44px] flex items-center justify-center" aria-label={isOwn ? 'Settings' : 'More options'}>
-          {isOwn ? <Settings size={20} color="white" /> : <Share2 size={20} color="white" />}
+        <button className="w-[44px] h-[44px] flex items-center justify-center" aria-label="Settings">
+          <Settings size={20} color="white" />
         </button>
       </div>
 
