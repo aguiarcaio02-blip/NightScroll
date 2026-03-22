@@ -10,7 +10,6 @@ const suggestedTags = ['#exclusive', '#premium', '#newcontent', '#fyp', '#trendi
 const settingsRows = [
   { icon: Crown, iconColor: '#F59E0B', label: 'Premium Content', desc: 'Subscribers only', defaultOn: false, locked: false },
   { icon: MessageCircle, iconColor: '#CCCCCC', label: 'Allow Comments', desc: 'Everyone', defaultOn: true, locked: false },
-  { icon: Share2, iconColor: '#CCCCCC', label: 'Allow Downloads', desc: 'Off by default', defaultOn: false, locked: false },
 ];
 
 export default function CreatePage() {
