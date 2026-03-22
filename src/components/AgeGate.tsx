@@ -46,12 +46,12 @@ export default function AgeGate() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0A0A0A] transition-opacity duration-300"
+      className="fixed inset-0 z-[100] bg-[#0A0A0A] overflow-y-auto transition-opacity duration-300"
       style={{ opacity: fading ? 0 : 1 }}
     >
-      <div className="w-full max-w-[420px] mx-auto px-xl text-center">
+      <div className="w-full max-w-[420px] mx-auto px-xl text-center min-h-full flex flex-col justify-center py-[40px]">
         {/* 18+ Shield */}
-        <div className="mb-3xl flex justify-center">
+        <div className="mb-xl flex justify-center">
           <div className="relative w-[72px] h-[72px] flex items-center justify-center">
             <Shield size={72} color="#D946EF" strokeWidth={1.5} />
             <span className="absolute text-white font-bold text-[18px]">18+</span>
@@ -62,7 +62,7 @@ export default function AgeGate() {
         <h1 className="text-[26px] font-bold text-white mb-sm">
           You must be 18+ to enter
         </h1>
-        <p className="text-[14px] text-[#888888] mb-3xl">
+        <p className="text-[14px] text-[#888888] mb-xl">
           This website contains age-restricted content. By entering, you confirm you are at least 18 years old.
         </p>
 
