@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Heart, MessageCircle, Bookmark, Share2, DollarSign, MoreHorizontal, Plus, User, Trash2, Flag, EyeOff } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, MoreHorizontal, Plus, User, Trash2, Flag, EyeOff } from 'lucide-react';
 import { Video, getCreator, formatCount } from '@/lib/mock-data';
 import { useApp } from '@/lib/AppContext';
 import { toggleLike, hasUserLiked } from '@/lib/supabase-posts';
@@ -13,7 +13,7 @@ interface Props {
 
 export default function ActionSidebar({ video, onProfileClick }: Props) {
   const creator = getCreator(video.creatorId);
-  const { setCommentsOpen, setShareOpen, openTip, currentUser, deletePost, myPosts, allPosts, setCurrentVideoId, updatePostCounts } = useApp();
+  const { setCommentsOpen, currentUser, deletePost, myPosts, allPosts, setCurrentVideoId, updatePostCounts } = useApp();
   const supabasePost = allPosts.find(p => p.id === video.id);
   const avatarSrc = creator?.avatar || supabasePost?.avatar || currentUser?.avatar || '';
   const [liked, setLiked] = useState(false);
@@ -95,18 +95,6 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
       label: 'Save',
       onClick: () => setSaved(!saved),
       ariaLabel: saved ? 'Unsave' : 'Save',
-    },
-    {
-      icon: <Share2 size={24} color="white" strokeWidth={2} />,
-      label: formatCount(video.shares),
-      onClick: () => setShareOpen(true),
-      ariaLabel: 'Share',
-    },
-    {
-      icon: <DollarSign size={24} color="#22C55E" strokeWidth={2} />,
-      label: 'Tip',
-      onClick: () => openTip(video.creatorId),
-      ariaLabel: 'Send tip',
     },
   ];
 
