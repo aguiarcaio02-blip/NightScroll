@@ -21,6 +21,7 @@ export default function CreatePage() {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [caption, setCaption] = useState('');
+  const [contentCertified, setContentCertified] = useState(false);
   const [visibility, setVisibility] = useState('Public');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [toggles, setToggles] = useState<Record<string, boolean>>({
@@ -227,11 +228,24 @@ export default function CreatePage() {
             </select>
           </div>
 
+          {/* Content Certification */}
+          <label className="flex items-start gap-sm mb-lg cursor-pointer">
+            <input
+              type="checkbox"
+              checked={contentCertified}
+              onChange={(e) => setContentCertified(e.target.checked)}
+              className="mt-[3px] w-[18px] h-[18px] rounded accent-[#D946EF] shrink-0"
+            />
+            <span className="text-[12px] text-text-secondary leading-[1.5]">
+              I certify that all individuals in this video are at least 18 years old and have given their consent for this content to be published on NightScroll.
+            </span>
+          </label>
+
           {/* Post button */}
           <button
-            disabled={posting}
+            disabled={posting || !contentCertified}
             onClick={async () => {
-              if (!videoUrl || !currentUser || posting) return;
+              if (!videoUrl || !currentUser || posting || !contentCertified) return;
               try {
                 await addPost({
                   caption,

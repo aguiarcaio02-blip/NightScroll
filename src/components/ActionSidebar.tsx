@@ -5,6 +5,7 @@ import { Heart, MessageCircle, Bookmark, MoreHorizontal, Plus, User, Trash2, Fla
 import { Video, getCreator, formatCount } from '@/lib/mock-data';
 import { useApp } from '@/lib/AppContext';
 import { toggleLike, hasUserLiked } from '@/lib/supabase-posts';
+import ReportModal from './ReportModal';
 
 interface Props {
   video: Video;
@@ -20,6 +21,7 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
   const [saved, setSaved] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [liking, setLiking] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -191,7 +193,7 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
                 </button>
                 {!isOwnVideo && (
                   <button
-                    onClick={() => setMenuOpen(false)}
+                    onClick={() => { setMenuOpen(false); setReportOpen(true); }}
                     className="w-full flex items-center gap-md px-lg py-md hover:bg-white/5 transition-colors"
                   >
                     <Flag size={16} color="white" />
@@ -203,6 +205,14 @@ export default function ActionSidebar({ video, onProfileClick }: Props) {
           </div>
         )}
       </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        postId={video.id}
+        reporterUsername={currentUser?.username || ''}
+      />
     </div>
   );
 }

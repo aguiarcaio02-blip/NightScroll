@@ -19,6 +19,7 @@ interface AppContextType {
   signedUp: boolean;
   currentUser: UserAccount | null;
   signUp: (account: UserAccount) => void;
+  signOut: () => void;
   updateProfile: (updates: Partial<UserAccount>) => void;
   activeTab: string;
   setActiveTab: (t: string) => void;
@@ -301,6 +302,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const signOut = useCallback(() => {
+    setCurrentUser(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('nightscroll_user');
+    }
+  }, []);
+
   const updateProfile = useCallback((updates: Partial<UserAccount>) => {
     setCurrentUser(prev => {
       if (!prev) return prev;
@@ -316,7 +324,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider value={{
       ageVerified, setAgeVerified: handleSetAgeVerified,
       signedUp: currentUser !== null,
-      currentUser, signUp, updateProfile,
+      currentUser, signUp, signOut, updateProfile,
       activeTab, setActiveTab,
       feedTab, setFeedTab,
       commentsOpen, setCommentsOpen,

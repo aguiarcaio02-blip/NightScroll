@@ -17,6 +17,8 @@ import CommentsDrawer from '@/components/CommentsDrawer';
 import ShareSheet from '@/components/ShareSheet';
 import TipOverlay from '@/components/TipOverlay';
 import PullToRefresh from '@/components/PullToRefresh';
+import SettingsPage from '@/components/SettingsPage';
+import CookieConsent from '@/components/CookieConsent';
 
 function AppContent() {
   const { ageVerified, signedUp, currentUser, activeTab, setActiveTab, allPosts } = useApp();
@@ -107,6 +109,8 @@ function AppContent() {
             onBack={() => setActiveTab('home')}
           />
         );
+      case 'settings':
+        return <SettingsPage />;
       default:
         return <VideoFeed onProfileClick={handleProfileClick} />;
     }
@@ -123,6 +127,7 @@ function AppContent() {
         <CommentsDrawer />
         <ShareSheet />
         <TipOverlay />
+        <CookieConsent />
       </div>
     </PullToRefresh>
   );

@@ -12,6 +12,7 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [onlyfansUrl, setOnlyfansUrl] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -42,6 +43,10 @@ export default function SignUpScreen() {
 
     if (password !== confirmPassword) {
       errs.confirmPassword = 'Passwords do not match';
+    }
+
+    if (!termsAccepted) {
+      errs.terms = 'You must accept the Terms of Service and Privacy Policy';
     }
 
     setErrors(errs);
@@ -252,10 +257,29 @@ export default function SignUpScreen() {
           )}
         </p>
 
-        {/* Fine print */}
-        <p className="text-[11px] text-[#555555] mt-lg text-center leading-relaxed">
-          By {mode === 'signup' ? 'creating an account' : 'signing in'}, you agree to our Terms of Service and Privacy Policy.
-        </p>
+        {/* Terms acceptance */}
+        {mode === 'signup' ? (
+          <div className="mt-lg">
+            <label className="flex items-start gap-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => { setTermsAccepted(e.target.checked); setErrors(prev => ({ ...prev, terms: '' })); }}
+                className="mt-[3px] w-[16px] h-[16px] rounded accent-[#D946EF] shrink-0"
+              />
+              <span className="text-[12px] text-[#888888] leading-[1.5]">
+                I am at least 18 years old and agree to the{' '}
+                <span className="text-accent-primary">Terms of Service</span> and{' '}
+                <span className="text-accent-primary">Privacy Policy</span>.
+              </span>
+            </label>
+            {errors.terms && <p className="text-[#EF4444] text-[11px] mt-[4px] ml-[24px]">{errors.terms}</p>}
+          </div>
+        ) : (
+          <p className="text-[11px] text-[#555555] mt-lg text-center leading-relaxed">
+            By signing in, you agree to our Terms of Service and Privacy Policy.
+          </p>
+        )}
       </div>
     </div>
   );

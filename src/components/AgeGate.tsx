@@ -126,7 +126,10 @@ export default function AgeGate() {
 
         {/* Fine print */}
         <p className="text-[11px] text-[#555555] mt-lg leading-relaxed">
-          By entering, you agree to our Terms of Service and Privacy Policy. This site uses cookies to verify your age.
+          By entering, you agree to our{' '}
+          <span className="text-[#D946EF] underline">Terms of Service</span> and{' '}
+          <span className="text-[#D946EF] underline">Privacy Policy</span>.
+          This site uses cookies to verify your age.
         </p>
       </div>
     </div>
