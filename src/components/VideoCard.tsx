@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Lock, Crown, Volume2, VolumeX, Heart } from 'lucide-react';
 import { Video, getCreator } from '@/lib/mock-data';
+import { incrementView } from '@/lib/supabase-posts';
 import ActionSidebar from './ActionSidebar';
 import VideoInfo from './VideoInfo';
 import MuteButton from './MuteButton';
@@ -20,7 +21,26 @@ export default function VideoCard({ video, onProfileClick }: Props) {
   const [progress, setProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const tappedControlRef = useRef(false);
+  const viewCountedRef = useRef(false);
   const creator = getCreator(video.creatorId);
+
+  // Count view once when video starts playing
+  useEffect(() => {
+    viewCountedRef.current = false;
+  }, [video.id]);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    const handlePlay = () => {
+      if (!viewCountedRef.current && video.videoUrl) {
+        viewCountedRef.current = true;
+        incrementView(video.id).catch(() => {});
+      }
+    };
+    el.addEventListener('play', handlePlay);
+    return () => el.removeEventListener('play', handlePlay);
+  }, [video.id, video.videoUrl]);
 
   // Track video progress
   useEffect(() => {

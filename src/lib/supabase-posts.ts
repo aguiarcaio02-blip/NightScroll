@@ -159,6 +159,22 @@ export async function toggleLike(postId: string, username: string, actorAvatar?:
   return { liked: !existing, count: count || 0 };
 }
 
+// Increment view count for a post
+export async function incrementView(postId: string): Promise<void> {
+  const { data: post } = await supabase
+    .from('posts')
+    .select('views')
+    .eq('id', postId)
+    .single();
+
+  if (post) {
+    await supabase
+      .from('posts')
+      .update({ views: (post.views || 0) + 1 })
+      .eq('id', postId);
+  }
+}
+
 // Fetch all post IDs liked by a user
 export async function fetchLikedPostIds(username: string): Promise<string[]> {
   const { data, error } = await supabase
