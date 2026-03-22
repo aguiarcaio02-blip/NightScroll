@@ -11,10 +11,10 @@ export default function DMCAPage({ onBack }: DMCAPageProps) {
     <div className="min-h-screen bg-[#0A0A0A] text-white">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[#0A0A0A]/95 backdrop-blur-sm border-b border-white/10">
-        <div className="flex items-center gap-3 px-4 py-4">
+        <div className="flex items-center gap-md px-lg py-md h-[44px]">
           <button
             onClick={onBack}
-            className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors"
+            className="w-[44px] h-[44px] flex items-center justify-center -ml-[8px]"
             aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
@@ -24,21 +24,21 @@ export default function DMCAPage({ onBack }: DMCAPageProps) {
       </div>
 
       {/* Content */}
-      <div className="px-4 py-6 pb-20 max-w-3xl mx-auto space-y-8 text-sm leading-relaxed text-gray-300">
+      <div className="px-lg py-lg pb-[100px] max-w-[600px] mx-auto space-y-xl text-[14px] leading-[1.7] text-[#AAAAAA]">
         <div>
-          <p className="text-xs text-gray-500">Last Updated: March 2026</p>
-          <p className="mt-3">
+          <p className="text-[12px] text-[#666666]">Last Updated: March 2026</p>
+          <p className="mt-md">
             NightScroll (&quot;Company,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) respects the intellectual property rights of others and expects our users to do the same. In accordance with the Digital Millennium Copyright Act of 1998 (17 U.S.C. &sect; 512) (&quot;DMCA&quot;), we have adopted the following policy for addressing claims of copyright infringement on the NightScroll platform (the &quot;Platform&quot;).
           </p>
         </div>
 
         {/* 1. Reporting Copyright Infringement */}
         <section>
-          <h2 className="text-[#D946EF] text-base font-semibold mb-3">1. Reporting Copyright Infringement (Takedown Notice)</h2>
+          <h2 className="text-[#D946EF] text-[16px] font-bold mb-md">1. Reporting Copyright Infringement (Takedown Notice)</h2>
           <p>
             If you are a copyright owner, or authorized to act on behalf of one, and you believe that content available on the Platform infringes your copyrighted work, you may submit a written notification pursuant to the DMCA to our Designated Agent. Your notification must include all of the following elements to be effective under 17 U.S.C. &sect; 512(c)(3):
           </p>
-          <ol className="list-decimal list-inside mt-3 space-y-3 text-gray-400">
+          <ol className="list-decimal pl-[20px] mt-md space-y-sm text-[#999999]">
             <li>
               <span className="text-gray-300">Physical or Electronic Signature:</span> A physical or electronic signature of the copyright owner or a person authorized to act on behalf of the owner of an exclusive right that is allegedly infringed.
             </li>
@@ -65,27 +65,27 @@ export default function DMCAPage({ onBack }: DMCAPageProps) {
 
         {/* 2. Designated Agent */}
         <section>
-          <h2 className="text-[#D946EF] text-base font-semibold mb-3">2. Designated Agent</h2>
+          <h2 className="text-[#D946EF] text-[16px] font-bold mb-md">2. Designated Agent</h2>
           <p>
             DMCA takedown notices should be submitted to our Designated Agent at:
           </p>
-          <div className="mt-3 p-4 bg-white/5 rounded-lg border border-white/10">
+          <div className="mt-md p-lg bg-[#1A1A1A] rounded-[12px] border border-[#333333]">
             <p className="font-medium text-white">NightScroll DMCA Designated Agent</p>
             <p className="mt-1">Email: <span className="text-[#D946EF]">dmca@nightscroll.com</span></p>
             <p className="mt-1 text-gray-400 text-xs">Please include &quot;DMCA Takedown Notice&quot; in the subject line.</p>
           </div>
-          <p className="mt-3">
+          <p className="mt-md">
             Upon receipt of a valid takedown notice, we will expeditiously remove or disable access to the allegedly infringing material and will make a good faith effort to notify the user who posted the content.
           </p>
         </section>
 
         {/* 3. Counter-Notification */}
         <section>
-          <h2 className="text-[#D946EF] text-base font-semibold mb-3">3. Counter-Notification Process</h2>
+          <h2 className="text-[#D946EF] text-[16px] font-bold mb-md">3. Counter-Notification Process</h2>
           <p>
             If you believe that material you posted on the Platform was removed or disabled as a result of a mistake or misidentification, you may submit a written counter-notification to our Designated Agent. Your counter-notification must include all of the following elements pursuant to 17 U.S.C. &sect; 512(g)(3):
           </p>
-          <ol className="list-decimal list-inside mt-3 space-y-3 text-gray-400">
+          <ol className="list-decimal pl-[20px] mt-md space-y-sm text-[#999999]">
             <li>
               <span className="text-gray-300">Physical or Electronic Signature:</span> Your physical or electronic signature.
             </li>
@@ -102,25 +102,25 @@ export default function DMCAPage({ onBack }: DMCAPageProps) {
               <span className="text-gray-300">Contact Information:</span> Your name, address, and telephone number.
             </li>
           </ol>
-          <p className="mt-3">
+          <p className="mt-md">
             Upon receipt of a valid counter-notification, we will promptly forward a copy to the original complainant. If the original complainant does not file a court action seeking to restrain the allegedly infringing activity within ten (10) business days of receiving the counter-notification, we will restore the removed material within ten (10) to fourteen (14) business days after receipt of the counter-notification, unless our Designated Agent first receives notice that the original complainant has filed such action.
           </p>
         </section>
 
         {/* 4. Repeat Infringer Policy */}
         <section>
-          <h2 className="text-[#D946EF] text-base font-semibold mb-3">4. Repeat Infringer Policy</h2>
+          <h2 className="text-[#D946EF] text-[16px] font-bold mb-md">4. Repeat Infringer Policy</h2>
           <p>
             In accordance with the DMCA and other applicable law, NightScroll has adopted a policy of terminating, in appropriate circumstances and at our sole discretion, the accounts of users who are deemed to be repeat infringers. We may also, at our sole discretion, limit access to the Platform and/or terminate the accounts of any users who infringe any intellectual property rights of others, whether or not there is any repeat infringement.
           </p>
-          <p className="mt-3">
+          <p className="mt-md">
             Generally, a user will be considered a repeat infringer if they have been the subject of three (3) or more valid takedown notices. However, we reserve the right to terminate accounts after fewer incidents where warranted by the severity or nature of the infringement.
           </p>
         </section>
 
         {/* 5. Modifications to Copyright Content */}
         <section>
-          <h2 className="text-[#D946EF] text-base font-semibold mb-3">5. Accommodation of Standard Technical Measures</h2>
+          <h2 className="text-[#D946EF] text-[16px] font-bold mb-md">5. Accommodation of Standard Technical Measures</h2>
           <p>
             NightScroll accommodates and does not interfere with standard technical measures used by copyright owners to identify or protect copyrighted works, as defined in 17 U.S.C. &sect; 512(i)(2).
           </p>
@@ -128,7 +128,7 @@ export default function DMCAPage({ onBack }: DMCAPageProps) {
 
         {/* 6. Good Faith */}
         <section>
-          <h2 className="text-[#D946EF] text-base font-semibold mb-3">6. Good Faith and Misrepresentation</h2>
+          <h2 className="text-[#D946EF] text-[16px] font-bold mb-md">6. Good Faith and Misrepresentation</h2>
           <p>
             Please be advised that submitting a DMCA notice or counter-notification carries legal consequences. Before filing, you may wish to consult with an attorney to understand your rights and obligations. Knowingly submitting a false or fraudulent notice or counter-notification may result in liability under 17 U.S.C. &sect; 512(f), including damages and attorneys&apos; fees.
           </p>
@@ -136,11 +136,11 @@ export default function DMCAPage({ onBack }: DMCAPageProps) {
 
         {/* 7. Contact */}
         <section>
-          <h2 className="text-[#D946EF] text-base font-semibold mb-3">7. Contact Information</h2>
+          <h2 className="text-[#D946EF] text-[16px] font-bold mb-md">7. Contact Information</h2>
           <p>
             For all DMCA-related inquiries, please contact:
           </p>
-          <div className="mt-3 p-4 bg-white/5 rounded-lg border border-white/10">
+          <div className="mt-md p-lg bg-[#1A1A1A] rounded-[12px] border border-[#333333]">
             <p className="font-medium text-white">NightScroll DMCA Designated Agent</p>
             <p className="mt-1">Email: <span className="text-[#D946EF]">dmca@nightscroll.com</span></p>
           </div>
