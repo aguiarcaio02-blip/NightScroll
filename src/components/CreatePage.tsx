@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { ChevronLeft, Upload, Camera, Image, Crown, MessageCircle, Share2, Shield, Eye } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
 import CameraRecorder from './CameraRecorder';
@@ -19,6 +19,7 @@ export default function CreatePage() {
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [caption, setCaption] = useState('');
   const [visibility, setVisibility] = useState('Public');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -79,12 +80,48 @@ export default function CreatePage() {
               Record
             </button>
             <button
-              onClick={() => setStep(2)}
+              onClick={() => fileInputRef.current?.click()}
               className="flex-1 flex items-center justify-center gap-sm py-md rounded-[8px] text-white font-semibold text-[14px] bg-bg-tertiary border border-border-default min-h-[44px]"
             >
               <Image size={18} />
               Gallery
             </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="video/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const blob = file;
+                const url = URL.createObjectURL(blob);
+                setVideoBlob(blob);
+                setVideoUrl(url);
+
+                // Generate thumbnail from video
+                const video = document.createElement('video');
+                video.src = url;
+                video.muted = true;
+                video.playsInline = true;
+                video.onloadeddata = () => {
+                  video.currentTime = 0.5;
+                };
+                video.onseeked = () => {
+                  const canvas = document.createElement('canvas');
+                  canvas.width = video.videoWidth;
+                  canvas.height = video.videoHeight;
+                  const ctx = canvas.getContext('2d');
+                  if (ctx) {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    setThumbnailUrl(canvas.toDataURL('image/jpeg', 0.8));
+                  }
+                  setStep(2);
+                };
+                // Reset input so same file can be picked again
+                e.target.value = '';
+              }}
+            />
           </div>
         </div>
       ) : (
