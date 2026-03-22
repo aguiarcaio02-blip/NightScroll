@@ -42,14 +42,14 @@ export default function AgeGate() {
     setTimeout(() => setAgeVerified(true), 300);
   };
 
-  const inputClass = "bg-[#1A1A1A] border border-[#333333] rounded-[8px] text-center text-white text-[16px] h-[48px] outline-none focus:border-[#D946EF] transition-colors placeholder:text-[#555555]";
+  const inputClass = "bg-[#1A1A1A] border border-[#333333] rounded-[8px] text-center text-white text-[16px] h-[48px] outline-none focus:border-[#D946EF] transition-colors placeholder:text-[#555555] w-full";
 
   return (
     <div
       className="fixed inset-0 z-[100] bg-[#0A0A0A] overflow-y-auto transition-opacity duration-300"
       style={{ opacity: fading ? 0 : 1 }}
     >
-      <div className="w-full max-w-[420px] mx-auto px-xl text-center min-h-full flex flex-col justify-center py-[40px]">
+      <div className="w-full max-w-[420px] mx-auto px-lg text-center min-h-full flex flex-col justify-center py-[40px]">
         {/* 18+ Shield */}
         <div className="mb-xl flex justify-center">
           <div className="relative w-[72px] h-[72px] flex items-center justify-center">
@@ -67,7 +67,7 @@ export default function AgeGate() {
         </p>
 
         {/* DOB Inputs */}
-        <div className="flex gap-md mb-lg">
+        <div className="grid grid-cols-[1fr_1fr_1.3fr] gap-[10px] mb-lg">
           <input
             type="text"
             inputMode="numeric"
@@ -79,7 +79,7 @@ export default function AgeGate() {
               setMonth(val);
               if (val.length === 2) dayRef.current?.focus();
             }}
-            className={`${inputClass} flex-1`}
+            className={inputClass}
             aria-label="Month"
           />
           <input
@@ -94,7 +94,7 @@ export default function AgeGate() {
               setDay(val);
               if (val.length === 2) yearRef.current?.focus();
             }}
-            className={`${inputClass} flex-1`}
+            className={inputClass}
             aria-label="Day"
           />
           <input
@@ -105,7 +105,7 @@ export default function AgeGate() {
             placeholder="YYYY"
             value={year}
             onChange={(e) => setYear(e.target.value.replace(/\D/g, ''))}
-            className={`${inputClass} flex-[1.5]`}
+            className={inputClass}
             aria-label="Year"
           />
         </div>
