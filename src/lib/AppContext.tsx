@@ -10,6 +10,7 @@ export interface UserAccount {
   username: string;
   bio: string;
   avatar: string;
+  onlyfansUrl: string;
 }
 
 interface AppContextType {
@@ -255,6 +256,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         allow_comments: params.allowComments,
         allow_downloads: params.allowDownloads,
         age_restriction: params.ageRestriction,
+        onlyfans_url: currentUser.onlyfansUrl || '',
       });
 
       // Add to local state immediately

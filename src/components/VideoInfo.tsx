@@ -57,6 +57,21 @@ export default function VideoInfo({ video, onProfileClick }: Props) {
         )}
       </div>
 
+      {/* OnlyFans link */}
+      {supabasePost?.onlyfans_url && (
+        <a
+          href={supabasePost.onlyfans_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center gap-[4px] mb-sm px-[8px] py-[3px] rounded-full text-[11px] font-semibold"
+          style={{ background: 'rgba(0,169,235,0.2)', color: '#00A9EB', border: '1px solid rgba(0,169,235,0.3)' }}
+        >
+          <span>🔗</span>
+          OnlyFans
+        </a>
+      )}
+
       {/* Caption */}
       <p className="text-[13px] text-white leading-[1.4] mb-sm line-clamp-2">
         {captionParts.map((part, i) =>

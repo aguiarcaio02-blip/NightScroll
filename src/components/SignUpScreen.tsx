@@ -11,6 +11,7 @@ export default function SignUpScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [onlyfansUrl, setOnlyfansUrl] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -68,7 +69,7 @@ export default function SignUpScreen() {
     if (!validateSignUp()) return;
     setFading(true);
     setTimeout(() => {
-      signUp({ email: email.trim(), username: username.trim().toLowerCase(), bio: '', avatar: '' });
+      signUp({ email: email.trim(), username: username.trim().toLowerCase(), bio: '', avatar: '', onlyfansUrl: onlyfansUrl.trim() });
     }, 300);
   };
 
@@ -80,7 +81,7 @@ export default function SignUpScreen() {
     setTimeout(() => {
       // Try to find existing user data, otherwise create with email as username
       const emailName = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
-      signUp({ email: email.trim(), username: emailName || 'user', bio: '', avatar: '' });
+      signUp({ email: email.trim(), username: emailName || 'user', bio: '', avatar: '', onlyfansUrl: '' });
     }, 300);
   };
 
@@ -192,6 +193,23 @@ export default function SignUpScreen() {
               </button>
             </div>
             {errors.confirmPassword && <p className="text-[#EF4444] text-[12px] mt-[4px] ml-[4px]">{errors.confirmPassword}</p>}
+          </div>
+        )}
+
+        {/* OnlyFans link (signup only) */}
+        {mode === 'signup' && (
+          <div className="mb-lg">
+            <div className={inputWrap}>
+              <span className="absolute left-md top-1/2 -translate-y-1/2 text-[16px]">🔗</span>
+              <input
+                type="url"
+                placeholder="OnlyFans link (optional)"
+                value={onlyfansUrl}
+                onChange={(e) => setOnlyfansUrl(e.target.value)}
+                className={`${inputClass} border-[#333333] focus:border-[#D946EF]`}
+                aria-label="OnlyFans link"
+              />
+            </div>
           </div>
         )}
 

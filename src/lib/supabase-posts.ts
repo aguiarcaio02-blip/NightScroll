@@ -18,6 +18,7 @@ export interface SupabasePost {
   shares: number;
   views: number;
   created_at: string;
+  onlyfans_url: string;
 }
 
 // Upload video blob to Supabase Storage, return public URL
@@ -71,6 +72,7 @@ export async function createPost(post: {
   allow_comments: boolean;
   allow_downloads: boolean;
   age_restriction: boolean;
+  onlyfans_url: string;
 }): Promise<SupabasePost> {
   const { data, error } = await supabase
     .from('posts')

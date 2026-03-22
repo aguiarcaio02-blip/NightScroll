@@ -14,6 +14,7 @@ export default function EditProfileModal({ open, onClose }: Props) {
   const { currentUser, updateProfile } = useApp();
   const [bio, setBio] = useState(currentUser?.bio || '');
   const [avatarPreview, setAvatarPreview] = useState(currentUser?.avatar || '');
+  const [onlyfansUrl, setOnlyfansUrl] = useState(currentUser?.onlyfansUrl || '');
   const [saved, setSaved] = useState(false);
   const [rawImage, setRawImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -45,7 +46,7 @@ export default function EditProfileModal({ open, onClose }: Props) {
   };
 
   const handleSave = () => {
-    updateProfile({ bio: bio.trim(), avatar: avatarPreview });
+    updateProfile({ bio: bio.trim(), avatar: avatarPreview, onlyfansUrl: onlyfansUrl.trim() });
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
@@ -146,6 +147,19 @@ export default function EditProfileModal({ open, onClose }: Props) {
               className="w-full bg-bg-hover border border-border-default rounded-[8px] p-md text-[14px] text-white placeholder:text-text-faint outline-none focus:ring-1 focus:ring-accent-primary resize-none h-[100px]"
             />
             <p className="text-[11px] text-text-faint text-right mt-[4px]">{bio.length}/150</p>
+          </div>
+
+          {/* OnlyFans Link */}
+          <div>
+            <label className="text-[13px] font-semibold text-text-secondary mb-sm block">OnlyFans Link</label>
+            <input
+              type="url"
+              placeholder="https://onlyfans.com/yourusername"
+              value={onlyfansUrl}
+              onChange={(e) => setOnlyfansUrl(e.target.value)}
+              className="w-full bg-bg-hover border border-border-default rounded-[8px] p-md text-[14px] text-white placeholder:text-text-faint outline-none focus:ring-1 focus:ring-accent-primary"
+            />
+            <p className="text-[11px] text-text-faint mt-[4px]">Optional — will be shown on your videos</p>
           </div>
         </div>
       </div>

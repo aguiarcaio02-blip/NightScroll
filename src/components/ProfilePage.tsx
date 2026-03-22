@@ -30,7 +30,7 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [totalLikes, setTotalLikes] = useState(0);
-  const { openTip, setActiveTab: setAppTab, currentUser, myVideos, feedVideos } = useApp();
+  const { openTip, setActiveTab: setAppTab, currentUser, myVideos, feedVideos, allPosts } = useApp();
 
   // Fetch profile stats and liked posts
   useEffect(() => {
@@ -113,9 +113,29 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
         <p className="text-[13px] text-text-muted mb-sm">@{creator.username}</p>
 
         {/* Bio */}
-        <p className="text-[13px] text-text-secondary text-center max-w-[300px] leading-[1.5] mb-xl">
+        <p className="text-[13px] text-text-secondary text-center max-w-[300px] leading-[1.5] mb-sm">
           {displayBio}
         </p>
+
+        {/* OnlyFans link */}
+        {(() => {
+          const ofUrl = isOwn ? currentUser?.onlyfansUrl : feedVideos.find(v => v.creatorId === creator.username)?.id
+            ? allPosts.find(p => p.username === creator.username)?.onlyfans_url
+            : '';
+          const displayOfUrl = isOwn ? currentUser?.onlyfansUrl : allPosts.find(p => p.username === creator.username)?.onlyfans_url;
+          return displayOfUrl ? (
+            <a
+              href={displayOfUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-[4px] mb-xl px-md py-[4px] rounded-full text-[12px] font-semibold"
+              style={{ background: 'rgba(0,169,235,0.15)', color: '#00A9EB', border: '1px solid rgba(0,169,235,0.3)' }}
+            >
+              <span>🔗</span>
+              OnlyFans
+            </a>
+          ) : <div className="mb-xl" />;
+        })()}
 
         {/* Stats */}
         <div className="flex items-center gap-3xl mb-xl">
