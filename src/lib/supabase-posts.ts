@@ -215,6 +215,63 @@ export async function fetchTags(): Promise<{ tag: string; count: number }[]> {
     .sort((a, b) => b.count - a.count);
 }
 
+// --- FOLLOWS ---
+
+export async function toggleFollow(followerUsername: string, followingUsername: string): Promise<{ isFollowing: boolean }> {
+  if (followerUsername === followingUsername) return { isFollowing: false };
+
+  const { data: existing } = await supabase
+    .from('follows')
+    .select('id')
+    .eq('follower_username', followerUsername)
+    .eq('following_username', followingUsername)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase.from('follows').delete().eq('id', existing.id);
+    return { isFollowing: false };
+  } else {
+    await supabase.from('follows').insert({ follower_username: followerUsername, following_username: followingUsername });
+    return { isFollowing: true };
+  }
+}
+
+export async function isFollowing(followerUsername: string, followingUsername: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('follows')
+    .select('id')
+    .eq('follower_username', followerUsername)
+    .eq('following_username', followingUsername)
+    .maybeSingle();
+  return !!data;
+}
+
+export async function getFollowerCount(username: string): Promise<number> {
+  const { count } = await supabase
+    .from('follows')
+    .select('*', { count: 'exact', head: true })
+    .eq('following_username', username);
+  return count || 0;
+}
+
+export async function getFollowingCount(username: string): Promise<number> {
+  const { count } = await supabase
+    .from('follows')
+    .select('*', { count: 'exact', head: true })
+    .eq('follower_username', username);
+  return count || 0;
+}
+
+// Get total likes across all of a user's posts
+export async function getTotalLikes(username: string): Promise<number> {
+  const { data } = await supabase
+    .from('posts')
+    .select('likes')
+    .eq('username', username);
+  if (!data) return 0;
+  return data.reduce((sum, post) => sum + (post.likes || 0), 0);
+}
+
 // Increment view count for a post
 export async function incrementView(postId: string): Promise<void> {
   const { data: post } = await supabase

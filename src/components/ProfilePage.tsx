@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, BadgeCheck, Crown, Send, Grid3X3, Lock, Heart, Play, DollarSign, Settings, User, X } from 'lucide-react';
 import { Creator, Video, formatCount } from '@/lib/mock-data';
 import { useApp } from '@/lib/AppContext';
-import { fetchLikedPostIds } from '@/lib/supabase-posts';
+import { fetchLikedPostIds, getFollowerCount, getFollowingCount, getTotalLikes, isFollowing as checkIsFollowing, toggleFollow } from '@/lib/supabase-posts';
 import EditProfileModal from './EditProfileModal';
 import VideoCard from './VideoCard';
 
@@ -22,21 +22,38 @@ const contentTabs = [
 
 export default function ProfilePage({ creator, isOwn, onBack }: Props) {
   const [activeTab, setActiveTab] = useState('videos');
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [following, setFollowing] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [likedPostIds, setLikedPostIds] = useState<string[]>([]);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [totalLikes, setTotalLikes] = useState(0);
   const { openTip, setActiveTab: setAppTab, currentUser, myVideos, feedVideos } = useApp();
 
-  // Fetch liked post IDs for own profile
+  // Fetch profile stats and liked posts
   useEffect(() => {
+    const profileUsername = isOwn ? currentUser?.username : creator.username;
+    if (!profileUsername) return;
+
+    getFollowerCount(profileUsername).then(setFollowerCount).catch(() => {});
+    getFollowingCount(profileUsername).then(setFollowingCount).catch(() => {});
+    getTotalLikes(profileUsername).then(setTotalLikes).catch(() => {});
+
     if (isOwn && currentUser) {
       fetchLikedPostIds(currentUser.username)
         .then(setLikedPostIds)
         .catch(() => {});
     }
-  }, [isOwn, currentUser]);
+
+    // Check if current user follows this profile
+    if (!isOwn && currentUser) {
+      checkIsFollowing(currentUser.username, creator.username)
+        .then(setFollowing)
+        .catch(() => {});
+    }
+  }, [isOwn, currentUser, creator.username]);
 
   // Use current user data for own profile
   const displayAvatar = isOwn && currentUser?.avatar ? currentUser.avatar : creator.avatar;
@@ -103,9 +120,9 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
         {/* Stats */}
         <div className="flex items-center gap-3xl mb-xl">
           {[
-            { count: creator.following, label: 'Following' },
-            { count: creator.followers, label: 'Followers' },
-            { count: creator.likes, label: 'Likes' },
+            { count: followingCount, label: 'Following' },
+            { count: followerCount, label: 'Followers' },
+            { count: totalLikes, label: 'Likes' },
           ].map((stat) => (
             <div key={stat.label} className="flex flex-col items-center">
               <span className="text-[16px] font-bold text-white">{formatCount(stat.count)}</span>
@@ -125,15 +142,20 @@ export default function ProfilePage({ creator, isOwn, onBack }: Props) {
         ) : (
           <div className="flex items-center gap-sm">
             <button
-              onClick={() => setIsFollowing(!isFollowing)}
+              onClick={async () => {
+                if (!currentUser) return;
+                const result = await toggleFollow(currentUser.username, creator.username);
+                setFollowing(result.isFollowing);
+                setFollowerCount(prev => result.isFollowing ? prev + 1 : prev - 1);
+              }}
               className="px-xl py-sm rounded-full text-[14px] font-semibold transition-all min-h-[40px]"
               style={{
-                background: isFollowing ? 'transparent' : 'linear-gradient(135deg, #D946EF, #A855F7)',
-                border: isFollowing ? '1px solid #333' : 'none',
+                background: following ? 'transparent' : 'linear-gradient(135deg, #D946EF, #A855F7)',
+                border: following ? '1px solid #333' : 'none',
                 color: 'white',
               }}
             >
-              {isFollowing ? 'Following' : 'Follow'}
+              {following ? 'Following' : 'Follow'}
             </button>
             {creator.subscriptionPrice && (
               <button
